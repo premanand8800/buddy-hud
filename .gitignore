@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-dev/
 *.log
 promo/*.mp4
 promo/out.mp4

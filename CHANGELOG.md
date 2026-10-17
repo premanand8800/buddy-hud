@@ -2,6 +2,8 @@
 
 ## 0.12.2
 
+- Fix: with a hero costume on, the costume art covered an emote's gloves, face and goggles in the flat looks. The emote now draws in front.
+- **Buddy HUD Dev** for trying changes before a release: `npm run dev:app` packages the current checkout as a separate app (its own name and settings, never self-updates; installed to Applications on macOS). Quit Buddy HUD before opening it, since both use the same hook port.
 - First release delivered through the new signing key: from 0.12.1, Settings → Updates → Check now downloads, verifies and installs it with **Restart to update** (macOS, Windows and Linux).
 
 ## 0.12.1

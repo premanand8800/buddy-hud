@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const DEV_BUILD = require('./package.json').buddyChannel === 'dev'; // "Buddy HUD Dev" from npm run dev:app
 const PORT = +process.env.BUDDY_PORT || 47800;
 const PHONE_PORT = +process.env.BUDDY_PHONE_PORT || 47801;
 const HOOK_URL = `127.0.0.1:${PORT}/hook`;
@@ -104,7 +105,7 @@ function checkUpdate(manual) {
 const UPDATE_DIR = path.join(app.getPath('temp'), 'buddy-hud-update');
 let stagedApp = null, updateInstalling = false;
 function selfUpdater() {
-  if (!app.isPackaged) return { why: 'development build' };
+  if (!app.isPackaged || DEV_BUILD) return { why: 'development build' };
   if (isMac) {
     const b = macUpdate.bundleOf(process.execPath);
     return b ? { why: macUpdate.blocker(b), target: b, pick: macUpdate.pickZip, prepare: macUpdate.prepare, install: macUpdate.install } : { why: 'not running from an app bundle' };
@@ -623,7 +624,7 @@ function runSelfTest() {
 
 function snapshot() {
   return {
-    helper: { installed: fs.existsSync(HELPER), path: HELPER, supported: process.platform !== 'win32' }, update, updateStatus, ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
+    helper: { installed: fs.existsSync(HELPER), path: HELPER, supported: process.platform !== 'win32' }, update, updateStatus, ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion() + (DEV_BUILD ? '-dev' : ''),
     sessions: [...sessions.values()].sort((a, b) => b.updated - a.updated).map((s) => ({
       ...s, _usageState: undefined, _chatState: undefined, _usage: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!(s.tmux || s.pty), queued: (queued.get(s.id) || []).length,
     })),
