@@ -215,7 +215,6 @@ function render() {
   rs.setProperty('--orange', th.c); rs.setProperty('--orange2', th.c2);
   document.body.classList.toggle('privacy', !!(state.settings && state.settings.privacy));
   const label = s ? (modelLabel(s.model) || th.name) : '';
-  $('modelTag').hidden = !s; $('modelTag').querySelector('span').textContent = label;
 
   const zoom = (state.settings && state.settings.scale) || 1;
   document.documentElement.style.setProperty('--maxdrawer', Math.max(220, Math.floor(screen.availHeight / zoom - 330)) + 'px');
@@ -352,10 +351,10 @@ function render() {
     setHtml(ob, `<div class="h">😴 <span>Waiting for Claude Code…</span></div><div class="sub" style="font-family:inherit">Start <code>claude</code> in a terminal and I’ll wake up. New sessions only; restart any that were already running.</div>`);
   } else ob.hidden = true;
 
-  // session strip: every Claude Code session at a glance (shown when there is more than one)
+  // session strip: every Claude Code session at a glance; the selected one also carries the model name
   const stat = (x) => (state.perms.some((p) => p.sessionId === x.id) || ['permission', 'waiting'].includes(x.status) ? 'needs' : ['thinking', 'tool'].includes(x.status) ? 'working' : x.status === 'done' ? 'done' : 'idle');
-  $('strip').hidden = ss.length < 2;
-  setHtml($('strip'), ss.map((x) => `<div class="sc ${stat(x)} ${x.id === selected ? 'on' : ''}" data-id="${esc(x.id)}" title="${esc(x.cwd)}"><i></i><b>${esc(x.project)}</b><button data-dismiss="${esc(x.id)}" title="Hide this session">✕</button></div>`).join(''));
+  $('strip').hidden = !ss.length;
+  setHtml($('strip'), ss.map((x) => `<div class="sc ${stat(x)} ${x.id === selected ? 'on' : ''}" data-id="${esc(x.id)}" title="${esc(x.cwd)}"><i></i><b>${esc(x.project)}</b>${x.id === selected && label ? `<small>${esc(label)}</small>` : ''}<button data-dismiss="${esc(x.id)}" title="Hide this session">✕</button></div>`).join(''));
   $('strip').querySelectorAll('.sc').forEach((el) => (el.onclick = (e) => {
     if (e.target.closest('[data-dismiss]')) { hud.send('dismiss', e.target.closest('[data-dismiss]').dataset.dismiss); return; }
     selected = el.dataset.id; render();
