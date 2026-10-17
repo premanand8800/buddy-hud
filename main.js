@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const usageLib = require('./lib/usage');
 const chatLib = require('./lib/chat');
 const macUpdate = require('./lib/macupdate');
+const fileUpdate = require('./lib/fileupdate');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -97,20 +98,28 @@ function checkUpdate(manual) {
   req.on('error', (e) => { updateStatus = 'could not check (' + e.code + ')'; emit(); });
   req.on('timeout', () => req.destroy());
 }
-// macOS self-update: download + verify in the background, then "Restart to update" (or install on quit).
+// Self-update: download + verify in the background, then "Restart to update" (or install on quit).
+// macOS: unzip + swap the .app (lib/macupdate.js). Windows: run the signed NSIS installer silently. Linux: replace the AppImage.
+// Anything that cannot replace itself (portable .exe, .deb, dev build, read-only location) falls back to the Download button.
 const UPDATE_DIR = path.join(app.getPath('temp'), 'buddy-hud-update');
 let stagedApp = null, updateInstalling = false;
-const selfBundle = () => (isMac && app.isPackaged ? macUpdate.bundleOf(process.execPath) : null);
+function selfUpdater() {
+  if (!app.isPackaged) return { why: 'development build' };
+  if (isMac) {
+    const b = macUpdate.bundleOf(process.execPath);
+    return b ? { why: macUpdate.blocker(b), target: b, pick: macUpdate.pickZip, prepare: macUpdate.prepare, install: macUpdate.install } : { why: 'not running from an app bundle' };
+  }
+  if (process.platform === 'win32') return { why: fileUpdate.blocker(), target: process.execPath, pick: fileUpdate.pickAsset, prepare: fileUpdate.prepare, install: fileUpdate.installWindows };
+  return { why: fileUpdate.blocker(), target: process.env.APPIMAGE, pick: fileUpdate.pickAsset, prepare: fileUpdate.prepare, install: fileUpdate.installLinux };
+}
 function startSelfUpdate(assets) {
-  if (!isMac) return false;
-  const bundle = selfBundle();
-  const why = bundle ? macUpdate.blocker(bundle) : 'development build';
-  const zip = macUpdate.pickZip(assets);
-  if (why || !zip) { update.manualReason = why || 'no verified download in this release'; return false; }
+  const su = selfUpdater();
+  const zip = su.pick ? su.pick(assets) : null;
+  if (su.why || !zip) { update.manualReason = su.why || 'no signed download in this release'; return false; }
   const u = update;
   u.stage = 'downloading'; u.progress = 0; stagedApp = null; emit();
   let lastEmit = 0;
-  macUpdate.prepare({ zip, version: u.version, stagingDir: UPDATE_DIR, onProgress: (f) => { u.progress = f; if (Date.now() - lastEmit > 500) { lastEmit = Date.now(); emit(); } } })
+  su.prepare({ zip, version: u.version, stagingDir: UPDATE_DIR, onProgress: (f) => { u.progress = f; if (Date.now() - lastEmit > 500) { lastEmit = Date.now(); emit(); } } })
     .then((staged) => {
       if (update !== u) return;
       stagedApp = staged; u.stage = 'ready'; updateStatus = `update ${u.version} ready, restart to install`; emit();
@@ -125,10 +134,10 @@ function startSelfUpdate(assets) {
 }
 function installUpdate(relaunch) {
   if (!stagedApp || updateInstalling) return false;
-  const bundle = selfBundle();
-  if (!bundle || macUpdate.blocker(bundle)) return false;
+  const su = selfUpdater();
+  if (su.why || !su.target) return false;
   updateInstalling = true;
-  macUpdate.install({ staged: stagedApp, target: bundle, pid: process.pid, relaunch, stagingDir: UPDATE_DIR });
+  su.install({ staged: stagedApp, target: su.target, pid: process.pid, relaunch, stagingDir: UPDATE_DIR });
   return true;
 }
 setTimeout(() => checkUpdate(false), 8000);
