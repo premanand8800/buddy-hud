@@ -114,6 +114,10 @@ $('optReply').onchange = (e) => hud.send('set', { replyMode: e.target.checked })
 $('optScale').onchange = (e) => hud.send('set', { scale: +e.target.value });
 $('optAlways').onchange = (e) => hud.send('set', { alwaysShow: e.target.checked });
 $('optWalk').onchange = (e) => hud.send('set', { walk: e.target.checked });
+$('optShades').onchange = (e) => hud.send('set', { shades: e.target.value });
+$('optCoffee').onchange = (e) => hud.send('set', { coffee: e.target.checked });
+$('optThink').onchange = (e) => hud.send('set', { thinkPose: e.target.value });
+$('optAura').onchange = (e) => hud.send('set', { aura: e.target.value });
 $('optSkin').onchange = (e) => hud.send('set', { skin: e.target.value });
 $('optPhone').onchange = (e) => hud.send('phone', { enabled: e.target.checked });
 $('optPrivacy').onchange = (e) => hud.send('set', { privacy: e.target.checked });
@@ -210,10 +214,13 @@ function render() {
   document.body.classList.toggle('skin3d', skin === '3d' && !!(window.__buddy3d && window.__buddy3d.ok));
   const svg = $('clawd');
   svg.style.setProperty('--dir', String(pet.dir || 1));
-  svg.dataset.skin = (state.settings && state.settings.skin) || 'bot';
+  const st0 = state.settings || {};
+  svg.dataset.skin = st0.skin || 'bot';
+  svg.dataset.shades = st0.shades || 'none'; svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
+  document.body.dataset.aura = st0.aura || 'off';
   svg.dataset.act = a.act; svg.dataset.eyes = a.eyes; svg.dataset.look = a.look;
   $('item').textContent = a.item; $('item2').textContent = a.item2;
-  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2 });
+  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: st0.shades || 'none', coffee: !!st0.coffee, think: st0.thinkPose || 'scratch' });
 
   // context pill
   const pct = s && s.ctx.max ? Math.min(100, (s.ctx.used / s.ctx.max) * 100) : 0;
@@ -275,6 +282,7 @@ function render() {
     $('optAlways').checked = state.settings.alwaysShow !== false;
     setHtml($('lastmsg'), s && s.lastMsg ? `<div class="fh">💬 Claude’s last message</div><div class="say">${md(s.lastMsg)}</div>` : '');
     $('ctxNote').textContent = s ? `${fmt(s.ctx.max)} window for ${s.project}. ${s.ctx.why || ''}` : 'Detected automatically from the model Claude is using.';
+    $('optShades').value = st0.shades || 'none'; $('optCoffee').checked = !!st0.coffee; $('optThink').value = st0.thinkPose || 'scratch'; $('optAura').value = st0.aura || 'off';
     $('optSkin').value = (state.settings && state.settings.skin) || 'bot';
     const ph = state.phone || {};
     $('optPhone').checked = !!ph.enabled;
@@ -328,7 +336,7 @@ function render() {
   if (drawer && tab === 'chat') {
     const ch = state.chat && s && state.chat.id === s.id ? state.chat : null;
     const sttTxt = !s ? '' : (stat(s) === 'working' ? '💭 working…' : stat(s) === 'needs' ? '🙋 needs you' : stat(s) === 'done' ? '💬 finished' : '😴 idle');
-    setHtml($('chathead'), s ? `<span class="nm">${esc(s.project)}</span><span class="stt">${sttTxt}</span><span class="grow"></span><label title="While on, Claude waits for your reply at the end of each turn so you can answer from here (the terminal shows “hook running”)."><input type="checkbox" id="chatLive" ${state.settings.replyMode ? 'checked' : ''}> Live chat</label>` : '<span class="stt">No session selected</span>');
+    setHtml($('chathead'), s ? `<span class="nm">${esc(s.project)}</span><span class="stt">${sttTxt}</span><span class="grow"></span><label title="While on and this chat is open, Claude pauses for up to a minute at the end of each turn so you can answer from here (the terminal shows “running stop hooks” meanwhile). Closing the chat or switching it off releases it."><input type="checkbox" id="chatLive" ${state.settings.replyMode ? 'checked' : ''}> Live chat</label>` : '<span class="stt">No session selected</span>');
     if ($('chatLive')) $('chatLive').onchange = (e) => hud.send('set', { replyMode: e.target.checked });
     const log = $('chatlog');
     const near = log.scrollHeight - log.scrollTop - log.clientHeight < 70 || chatTabSeen !== (s && s.id);
@@ -353,7 +361,7 @@ function render() {
   if (can) $('replyHint').textContent = '🟢 Claude is waiting — your reply goes straight into the session';
   else if (idle && s && s.canType) $('replyHint').textContent = '⌨️ Typed into your tmux pane';
   else if (wontDeliver) {
-    setHtml($('replyHint'), `⚠️ Claude is idle, and I can't type into this terminal. Your message <b>waits</b> until you start the next turn there.${state.settings.replyMode ? '' : ' <button class="linkbtn" id="hintHold">Hold turns open so I can deliver it</button>'}`);
+    setHtml($('replyHint'), `⚠️ Claude is idle, and I can't type into this terminal. Your message <b>waits</b> until you start the next turn there.${state.settings.replyMode ? '' : ' <button class="linkbtn" id="hintHold">Turn on Live chat to deliver it</button>'}`);
     if ($('hintHold')) $('hintHold').onclick = () => hud.send('set', { replyMode: true });
   } else $('replyHint').textContent = '📬 Claude is working — your message is delivered at its next step';
   $('btnSkip').hidden = !can;

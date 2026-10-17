@@ -15,7 +15,7 @@ process.env.HOME = home; process.env.USERPROFILE = home; process.env.BUDDY_PORT 
 const { run } = require('../install-hooks');
 run(false); // real installer, into the temp HOME
 fs.mkdirSync(path.join(home, '.buddy-hud'), { recursive: true });
-fs.writeFileSync(path.join(home, '.buddy-hud', 'settings.json'), JSON.stringify({ phone: { enabled: true, token: 'tok123' } }));
+fs.writeFileSync(path.join(home, '.buddy-hud', 'settings.json'), JSON.stringify({ phone: { enabled: true, token: 'tok123' }, replyMode: true }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const req = (method, url, body, headers = {}) => new Promise((resolve, reject) => {
@@ -75,6 +75,11 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     assert.strictEqual(st.sessions[0].ctx.max, 200000, 'standard window auto-detected');
     assert.strictEqual(st.sessions[0].summary.edited.length, 1);
     assert.strictEqual(st.health.state, 'ok');
+
+    // hold mode is on (settings) but the chat panel is closed, so the Stop hook must return at once: no "running stop hooks" in the terminal
+    const t0 = Date.now();
+    const stopRes = await post({ session_id: 's1', hook_event_name: 'Stop', transcript_path: tr });
+    assert.strictEqual(stopRes.body, '{}'); assert.ok(Date.now() - t0 < 1500, 'Stop hook must not be held while the chat is not open');
 
     // permission request is held, then cleaned up when Claude Code goes away
     const held = http.request({ host: '127.0.0.1', port: PORT, path: '/hook', method: 'POST' }); held.on('error', () => {});

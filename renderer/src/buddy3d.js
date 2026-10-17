@@ -99,8 +99,30 @@ if (renderer) {
   const handle = box(0.06, 0.3, 0.06, darkMat, 0.02); handle.position.set(0.14, -0.27, 0); handle.rotation.z = 0.5; lens.add(handle);
   lens.position.set(0.3, -0.42, 0.25); handR.add(lens);
 
+  // ---------- accessories ----------
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.15, metalness: 0.3 });
+  const tintMat = new THREE.MeshStandardMaterial({ color: 0x9fd4ff, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.4 });
+  const strapMat = new THREE.MeshStandardMaterial({ color: 0x3a3633, roughness: 0.7 });
+  const mugMat = new THREE.MeshStandardMaterial({ color: 0xf4eee8, roughness: 0.4 });
+  const coffeeMat = new THREE.MeshStandardMaterial({ color: 0x5a3422, roughness: 0.5 });
+  const sun = new THREE.Group(); sun.visible = false; face.add(sun);
+  for (const x of [29, 131]) { const [px, py] = P(x, 50); const l = box(0.44, 0.3, 0.07, lensMat, 0.1); l.position.set(px, py, 0.03); sun.add(l); }
+  { const b = box(0.62, 0.07, 0.07, lensMat, 0.03); b.position.set(0, P(80, 42)[1], 0.03); sun.add(b); }
+  const gog = new THREE.Group(); gog.visible = false; face.add(gog);
+  for (const x of [29, 131]) {
+    const [px, py] = P(x, 50);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 10, 24), strapMat); rim.position.set(px, py, 0.05); gog.add(rim);
+    const gl = new THREE.Mesh(new THREE.CircleGeometry(0.2, 24), tintMat); gl.position.set(px, py, 0.06); gog.add(gl);
+  }
+  { const band = box(1.66, 0.1, D + 0.06, strapMat, 0.03); band.position.set(0, P(80, 50)[1], -D / 2); gog.add(band); } // wraps around the whole head
+  const mug = new THREE.Group(); mug.visible = false;
+  { const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.2, 18), mugMat); cup.position.y = 0; mug.add(cup);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 18), coffeeMat); top.position.y = 0.095; mug.add(top);
+    const han = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 8, 14), mugMat); han.position.set(0.12, 0, 0); mug.add(han);
+    mug.position.set(0.1, -0.34, 0.26); handR.add(mug); }
+
   // ---------- state ----------
-  const st = { act: 'idle', eyes: 'sleep', dir: 1, item: '' };
+  const st = { act: 'idle', eyes: 'sleep', dir: 1, item: '', shades: 'none', coffee: false, think: 'scratch' };
   const itemEl = document.createElement('div'); itemEl.id = 'item3d'; host.appendChild(itemEl);
   const col = new THREE.Color(), col2 = new THREE.Color();
 
@@ -128,7 +150,7 @@ if (renderer) {
     // defaults every frame, then each act overrides
     let targetYaw = Math.sin(t * 0.6) * 0.32; // slow turntable sway shows off the depth
     let by = Math.sin(t * Math.PI * 2 / 2.6) * 0.015, roll = 0, pitch = 0, sx = 1, sy = 1, hop = 0;
-    let lRotX = 0, lRotZ = 0, rRotX = 0, rRotZ = 0, lPosZ = 0, rPosZ = 0, legSwing = 0, legLift = 0, legScale = 1;
+    let lPX = -0.9, lPY = 0.76, rPX = 0.9, rPY = 0.76, lRotX = 0, lRotZ = 0, rRotX = 0, rRotZ = 0, lPosZ = 0, rPosZ = 0, legSwing = 0, legLift = 0, legScale = 1;
     let showKb = false, showBook = false, showLens = false, eyeX = 0, eyeY = 0;
     handMat.color.copy(col);
 
@@ -160,7 +182,9 @@ if (renderer) {
         eyeX = Math.sin(t * 3) * 0.06;
         break;
       case 'think':
-        targetYaw = -0.25; rRotZ = 2.7; rRotX = -0.4 + Math.sin(t * 9) * 0.1; eyeY = 0.06; eyeX = -0.03; roll = Math.sin(t * 0.8) * 0.04;
+        targetYaw = -0.25; eyeY = 0.06; eyeX = -0.03; roll = Math.sin(t * 0.8) * 0.04;
+        if (st.think === 'chin') { rPX = 0.3; rPY = 0.5; rPosZ = 0.5; rRotX = -1.25 + Math.sin(t * 5) * 0.08; rRotZ = -0.1; lPX = 0.05; lPY = 0.3; lPosZ = 0.5; lRotX = -1.5; lRotZ = 0; handMat.color.copy(col2); }
+        else { rRotZ = 2.7; rRotX = -0.4 + Math.sin(t * 9) * 0.1; }
         break;
       case 'wait': {
         targetYaw = 0; const ph = (t % 1.8) / 1.8;
@@ -184,6 +208,7 @@ if (renderer) {
     root.position.y = hop;
     body.position.y = by; body.rotation.z = ease(body.rotation.z, roll, k); body.rotation.x = ease(body.rotation.x, pitch, k);
     body.scale.set(ease(body.scale.x, sx, k), ease(body.scale.y, sy, k), 1);
+    handL.position.x = ease(handL.position.x, lPX, k); handL.position.y = ease(handL.position.y, lPY, k); handR.position.x = ease(handR.position.x, rPX, k); handR.position.y = ease(handR.position.y, rPY, k);
     handL.rotation.x = ease(handL.rotation.x, lRotX, k); handL.rotation.z = ease(handL.rotation.z, lRotZ, k); handL.position.z = ease(handL.position.z, lPosZ, k);
     handR.rotation.x = ease(handR.rotation.x, rRotX, k); handR.rotation.z = ease(handR.rotation.z, rRotZ, k); handR.position.z = ease(handR.position.z, rPosZ, k);
     for (const l of legs) {
@@ -192,10 +217,14 @@ if (renderer) {
       l.scale.y = ease(l.scale.y, legScale, k);
     }
     keyboard.visible = showKb; book.visible = showBook; lens.visible = showLens;
+    sun.visible = st.shades === 'sunglasses'; gog.visible = st.shades === 'goggles';
+    const free = ['idle', 'sit', 'look', 'walk'].includes(a);
+    mug.visible = st.coffee && free;
+    if (mug.visible && a !== 'walk') { const ph = (t % 7) / 7; if (ph > 0.58 && ph < 0.82) { const k2 = Math.sin((ph - 0.58) / 0.24 * Math.PI); handR.rotation.z = 1.1 * k2; handR.rotation.x = -1.3 * k2; } }
     book.position.y = 1.62 + Math.sin(t * 2) * 0.03;
 
     // eyes: expression + blink + gaze
-    for (const [n, g] of Object.entries(eyes)) g.visible = n === st.eyes;
+    for (const [n, g] of Object.entries(eyes)) g.visible = n === st.eyes && st.shades !== 'sunglasses';
     const blink = (t % 3.4) > 3.25 ? 0.1 : 1;
     for (const e of openEyes.concat(wideEyes)) e.scale.y = blink;
     face.position.x = ease(face.position.x, eyeX, k); face.position.y = ease(face.position.y, eyeY, k);
@@ -213,6 +242,9 @@ if (renderer) {
       if (o.dir) st.dir = o.dir > 0 ? 1 : -1;
       if (o.color) { col.set(o.color); bodyMat.color.copy(col); bodyMat.emissive.copy(col); handMat.emissive.copy(col); }
       if (o.color2) col2.set(o.color2);
+      if ('shades' in o) st.shades = o.shades;
+      if ('coffee' in o) st.coffee = o.coffee;
+      if (o.think) st.think = o.think;
       const it = ['type', 'read', 'search', 'walk'].includes(st.act) ? '' : (o.item || ''); // real 3D props replace the emoji
       if (it !== st.item) { st.item = it; itemEl.textContent = it; }
     },

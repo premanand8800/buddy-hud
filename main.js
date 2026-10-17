@@ -35,7 +35,7 @@ const sessions = new Map(); // id -> session
 const pendingPerms = new Map(); // id -> { res, sessionId, tool, summary, diff }
 const stopHolds = new Map(); // sessionId -> res
 const queued = new Map(); // sessionId -> [text]
-const DEFAULTS = { alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
+const DEFAULTS = { shades: 'none', coffee: false, thinkPose: 'scratch', aura: 'off', alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
 let settings = { ...DEFAULTS };
 try { const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings = { ...DEFAULTS, ...saved, alerts: { ...DEFAULTS.alerts, ...(saved.alerts || {}) } }; } catch {}
 const DAILY_FILE = path.join(os.homedir(), '.buddy-hud', 'daily.json');
@@ -365,10 +365,19 @@ function takeQueued(id, evName) {
   });
 }
 
+const holdSince = new Map();
 function releaseStop(id) {
   const res = stopHolds.get(id);
+  holdSince.delete(id);
   if (res) { stopHolds.delete(id); try { res.end('{}'); } catch {} }
 }
+// a held turn never lasts long: 60 s, extended (up to 5 min) only while the user is typing a reply
+setInterval(() => {
+  for (const [id, t] of holdSince) {
+    const age = Date.now() - t;
+    if (age > 300000 || (age > 60000 && !uiState.typing)) { releaseStop(id); emit(); }
+  }
+}, 2000);
 
 function toast(title, body) {
   try { if (Notification.isSupported()) new Notification({ title, body, silent: false }).show(); } catch {}
@@ -440,7 +449,9 @@ function handleHook(req, res, body) {
       return;
     }
     if (route === '/stop') {
-      if (!settings.replyMode) return res.end('{}');
+      // Holding the turn open makes the terminal say "running stop hooks", so only do it while the user is
+      // actually looking at this session's chat (panel open on it); never for the self-test.
+      if (!settings.replyMode || id === '__selftest' || !uiState.drawer || selectedId !== id) return res.end('{}');
       const q = queued.get(id);
       if (q && q.length) {
         queued.delete(id);
@@ -448,6 +459,7 @@ function handleHook(req, res, body) {
       }
       releaseStop(id);
       stopHolds.set(id, res);
+      holdSince.set(id, Date.now());
       res.on('close', () => { if (!res.writableEnded && stopHolds.get(id) === res) { stopHolds.delete(id); emit(); } });
       emit();
       return;
@@ -746,7 +758,7 @@ ipcMain.on('move', (_e, { dx, dy }) => {
   pet.dragPauseUntil = Date.now() + 15000;
   if (pet.phase) setPhase(null);
 });
-ipcMain.on('ui', (_e, u) => { uiState = { ...uiState, ...u }; });
+ipcMain.on('ui', (_e, u) => { uiState = { ...uiState, ...u }; if (!uiState.drawer) { let any = false; for (const id of [...stopHolds.keys()]) { releaseStop(id); any = true; } if (any) emit(); } });
 ipcMain.on('quit', () => app.quit());
 ipcMain.on('hide', () => { pinned = false; userHidden = true; win.hide(); });
 ipcMain.on('installHooks', () => {
