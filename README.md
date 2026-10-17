@@ -85,6 +85,10 @@ Messages you type in the buddy's Chat tab reach Claude Code like this:
 
 Buddy HUD tells you when a new version is out (a bubble with a Download button, and Settings → Updates → Check now). Download and install it over the old one; your settings are kept. It does not update itself silently yet (that needs code signing on macOS). To stop the check, untick "Check GitHub for new versions".
 
+### How updates are protected
+
+The macOS in-app updater does not trust GitHub alone. It downloads only from this repository's releases, checks the file's SHA-256, unpacks it, checks the bundle id, version and code signature, and **requires an Ed25519 signature** made with a release key that never leaves the repository's protected `release` environment (every release run needs the owner's approval). The matching public key is built into the app. If anything fails, nothing is installed and you get the normal Download button.
+
 ## Privacy and security
 
 - Everything stays on your machine. The app listens only on `127.0.0.1:47800` and sends nothing to any server, with one exception: the optional update check asks GitHub's public releases API for the latest version number (no data about you is sent).
