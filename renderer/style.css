@@ -614,10 +614,13 @@ body[data-costume] #stage { padding-top: 24px; }
 .c-iron .goldb { animation: ironBar 9s ease-in-out infinite; }
 
 /* ---------- emotes (🎭 tray): short meme gestures; the buddy gains a face, gloves and props while emoting ---------- */
-#emotes .emoteGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
-#emotes .emoteGrid button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: 10px; font-size: 18px; line-height: 1; }
+#emotes { width: auto; padding: 8px; border-radius: 16px; align-self: center; transform-origin: right center; }
+#emotes .h { font-size: 12px; min-width: 0; }
+#emotes #emoName { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+#emotes #emoClose { width: 22px; height: 22px; padding: 0; border-radius: 50%; font-size: 11px; line-height: 1; display: grid; place-items: center; }
+#emotes .emoteGrid { display: grid; grid-template-columns: repeat(4, 34px); gap: 4px; margin-top: 6px; }
+#emotes .emoteGrid button { width: 34px; height: 34px; padding: 0; border-radius: 10px; font-size: 17px; line-height: 1; display: grid; place-items: center; }
 #emotes .emoteGrid button .ico { width: 18px; height: 18px; color: var(--fg); }
-#emotes .emoteGrid button span { font-size: 10.5px; color: var(--dim); white-space: nowrap; }
 #btnEmote.on { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 25%, var(--glass)); }
 #clawd[data-eyes=lid] .e-lid, #clawd[data-eyes=sly] .e-sly { display: block; }
 #clawd[data-act^=emote] #item { opacity: 1; animation: floaty 1.2s ease-in-out infinite; }
