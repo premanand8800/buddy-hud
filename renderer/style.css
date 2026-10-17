@@ -397,3 +397,26 @@ body[data-aura=max] #aura i { display: block; position: absolute; bottom: 28%; w
 @keyframes auraRise { 0% { opacity: 0; translate: 0 0; scale: .6; } 15% { opacity: 1; } 100% { opacity: 0; translate: 0 -170px; scale: 1.2; } }
 body.skin3d #aura { z-index: 0; }
 body[data-aura=glow] #mascot, body[data-aura=max] #mascot { margin: 26px 40px 8px 0; }
+
+/* ---------- aura farming (the Pacu Jalur "boat kid" meme): calm sway, arms out, shades, canoe, +aura ---------- */
+#clawd .canoe { display: none; }
+#clawd[data-act=farm] .canoe { display: block; animation: canoeRock 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+#clawd .hull { fill: #6b3f2a; } #clawd .trim { fill: #c0392b; } #clawd .wave { fill: none; stroke: rgba(140,210,255,.55); stroke-width: 3; stroke-linecap: round; animation: waveSlide 2s linear infinite; }
+@keyframes canoeRock { 0%, 100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+@keyframes waveSlide { to { translate: -40px 0; } }
+#clawd[data-act=farm] .rig { animation: farmSway 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes farmSway { 0%, 100% { transform: rotate(-3.5deg) translateX(-7px); } 50% { transform: rotate(3.5deg) translateX(7px); } }
+#clawd[data-act=farm] .body { animation: bob 6.4s ease-in-out infinite; }
+#clawd[data-act=farm] #handR { transform: translate(24px, -12px) rotate(-82deg); animation: farmArmR 3.2s ease-in-out infinite; }
+#clawd[data-act=farm] #handL { transform: translate(-24px, -12px) rotate(82deg); animation: farmArmL 3.2s ease-in-out infinite; }
+@keyframes farmArmR { 0%, 100% { translate: 0 6px; rotate: 10deg; } 50% { translate: 0 -18px; rotate: -12deg; } }
+@keyframes farmArmL { 0%, 100% { translate: 0 -18px; rotate: 12deg; } 50% { translate: 0 6px; rotate: -10deg; } }
+#clawd[data-act=farm] .hand rect { fill: var(--orange2); }
+#clawd[data-act=farm] #item { opacity: 1; font-size: 30px; animation: floaty 2.4s ease-in-out infinite; }
+#aurapops { position: absolute; left: 0; right: 0; top: 8px; height: 0; pointer-events: none; z-index: 6; }
+.aurapop { position: absolute; right: 8px; bottom: 0; white-space: nowrap; font: 800 22px system-ui; letter-spacing: .5px; color: #ffd76a; text-shadow: 0 0 10px #ff9f1c, 0 0 22px #ff6b00, 0 2px 4px rgba(0,0,0,.8); animation: auraPop 2.6s ease-out forwards; pointer-events: none; z-index: 5; }
+.aurapop.neg { color: #ff8a8a; text-shadow: 0 0 10px #ff3b3b, 0 2px 4px rgba(0,0,0,.8); }
+.aurapop small { display: block; font: 700 11px system-ui; opacity: .85; letter-spacing: 1.5px; text-align: right; }
+@keyframes auraPop { 0% { opacity: 0; transform: translateY(40px) scale(.7); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: translateY(-6px) scale(1); } 100% { opacity: 0; transform: translateY(-150px) scale(1); } }
+
+body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }

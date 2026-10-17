@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- **Aura farming mode** 🔥 (Customize → Aura → "Aura farming"), inspired by the Pacu Jalur "boat kid" meme: when Claude is idle the buddy puts on shades, stands in a little canoe on gentle waves and sways with its arms out, calm and unbothered, with a rotating aura. Works in the flat looks and 3D.
+- **Aura score**: every finished turn floats a glowing "+500 aura" (a long task earns "LEGENDARY GRIND" +1000; a turn with tool errors is "CRINGE" −100). The running total is in Details. Popups only show when the aura setting is on.
+
 ## 0.7.0
 
 - **Fix: terminal stuck on "running stop hooks".** Reply-hold mode held every turn's Stop hook open for up to 15 minutes. It now only holds while you have that session's chat panel open, for at most 60 s (extended only while you type a reply), and closing the panel releases it. The self-test never holds. Everyone who had hold mode on was seeing this.
