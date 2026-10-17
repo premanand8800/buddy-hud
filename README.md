@@ -39,7 +39,7 @@ Download the installer for your system from the [Releases page](https://github.c
 
 | OS | File |
 |---|---|
-| Linux | `.AppImage` or `.deb` |
+| Linux | `.AppImage` or `.deb` (the AppImage needs FUSE 2: `sudo apt install libfuse2t64` on Ubuntu 22.04+; the `.deb` doesn't) |
 | macOS | `.dmg` (`arm64` for Apple Silicon, `x64` for Intel) |
 | Windows | `win-setup.exe` installer or `win-portable.exe` |
 
