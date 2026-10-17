@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0
+
+- **Fix: terminal stuck on "running stop hooks".** Reply-hold mode held every turn's Stop hook open for up to 15 minutes. It now only holds while you have that session's chat panel open, for at most 60 s (extended only while you type a reply), and closing the panel releases it. The self-test never holds. Everyone who had hold mode on was seeing this.
+- **More ways to customise** (Customize tab), in both the flat and 3D looks: 😎 sunglasses or 🥽 goggles, ☕ coffee break (holds a steaming mug and sips while idle), a 🤔 hand-on-chin thinking pose, and an aura (Glow, or 🔥 Aura farming with rotating rings and rising sparks) that follows the model colour.
+
 ## 0.6.0
 
 - **Every Claude Code session is shown** (requested by a tester running three terminals). Sessions that were already open before Buddy HUD or its hooks existed are discovered from their transcripts. A strip of session chips shows each one's state (working, needs you, finished, idle); click to switch, ✕ to hide one.
