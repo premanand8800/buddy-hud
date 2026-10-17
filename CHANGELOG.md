@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.2
+
+- First release delivered through the new signing key: from 0.12.1, Settings → Updates → Check now downloads, verifies and installs it with **Restart to update** (macOS, Windows and Linux).
+
 ## 0.12.1
 
 - **New release signing key.** The previous key was never installed in the release pipeline, so 0.12.0 shipped without update signatures and 0.11.0/0.12.0 cannot update themselves to it. Install 0.12.1 by hand once (Download button or the GitHub release page); automatic updates work again from 0.12.1 onward, on macOS, Windows and Linux.
