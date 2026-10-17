@@ -119,6 +119,34 @@ $('btnSet').onclick = () => openTab('settings');
 $('btnChat').onclick = () => openTab('chat');
 $('btnCust').onclick = () => openTab('custom');
 
+// emotes: meme gestures the buddy acts out for a few seconds, picked from the 🎭 tray
+const EMOTES = [
+  { id: 'nope', icon: '☝️', name: 'Nuh-uh', eyes: 'lid', item: '', ms: 3200 },
+  { id: 'point', icon: '👉', name: 'You!', eyes: 'wide', item: '', ms: 2600 },
+  { id: 'guns', icon: '😎', name: 'Finger guns', eyes: 'none', item: '✨', ms: 2600 },
+  { id: 'dab', icon: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="10" r="3"/><path d="M10 13 L12 19 L9 23 M12 19 L15 23 M11 14 L21 5 M11 14 L5 9 L13 4"/></svg>', name: 'Dab', eyes: 'squint', item: '', ms: 2400 },
+  { id: 'shrug', icon: '🤷', name: 'Shrug', eyes: 'open', item: '❓', ms: 2600 },
+  { id: 'vibe', icon: '🎧', name: 'Vibe', eyes: 'happy', item: '🎵', ms: 4000 },
+  { id: 'facepalm', icon: '🤦', name: 'Facepalm', eyes: 'sleep', item: '', ms: 2800 },
+  { id: 'shh', icon: '🤫', name: 'Shh', eyes: 'lid', item: '', ms: 2800 },
+  { id: 'scheme', icon: '😏', name: 'Scheming', eyes: 'sly', item: '', ms: 3000 },
+  { id: 'perfect', icon: '👌', name: 'Perfection', eyes: 'lid', item: '', ms: 2600 },
+  { id: 'pat', icon: '🫳', name: 'Pat pat', eyes: 'lid', item: '', ms: 2800 },
+  { id: 'sideeye', icon: '😒', name: 'Side-eye', eyes: 'lid', item: '', ms: 3000 },
+  { id: 'sweat', icon: '😅', name: 'Sweating', eyes: 'wide', item: '', ms: 3000 },
+  { id: 'scuba', icon: '🤿', name: 'Scuba dance', eyes: 'happy', item: '🫧', ms: 4500 },
+];
+let emote = null, emoteUntil = 0, emotesOpen = false, emoteTimer;
+function playEmote(id) {
+  emote = EMOTES.find((e) => e.id === id) || null;
+  emoteUntil = emote ? Date.now() + emote.ms : 0;
+  clearTimeout(emoteTimer); if (emote) emoteTimer = setTimeout(render, emote.ms + 50);
+  render();
+}
+setHtml($('emotes'), `<div class="h">🎭 <span>Emotes</span></div><div class="emoteGrid">${EMOTES.map((e) => `<button data-emote="${e.id}" title="${e.name}">${e.icon}<span>${e.name}</span></button>`).join('')}</div>`);
+$('emotes').querySelectorAll('[data-emote]').forEach((b) => (b.onclick = () => playEmote(b.dataset.emote)));
+$('btnEmote').onclick = () => { emotesOpen = !emotesOpen; render(); };
+
 $('btnQuit').onclick = () => hud.send('quit');
 $('optReply').onchange = (e) => hud.send('set', { replyMode: e.target.checked });
 $('optScale').onchange = (e) => hud.send('set', { scale: +e.target.value });
@@ -210,6 +238,7 @@ function render() {
   const hero = costume !== 'none' && ['idle', 'farm'].includes(a.act) && !(pet.phase === 'walk' || pet.phase === 'run');
   if (hero) a = { act: 'hero', eyes: 'open', item: '', item2: '', look: '' };
   else if (farm) a = { act: 'farm', eyes: 'open', item: '🌊', item2: '', look: '' };
+  if (emote && Date.now() < emoteUntil) a = { act: 'emote-' + emote.id, eyes: emote.eyes, item: emote.item, item2: '', look: '' };
   document.body.dataset.act = a.act;
 
   // theme follows the model (picked model shows immediately, real model confirms later)
@@ -296,6 +325,7 @@ function render() {
   document.querySelectorAll('#drawer [data-t]').forEach((el) => { el.hidden = el.dataset.t !== tab; });
   document.querySelectorAll('.seg').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
   $('btnChat').classList.toggle('on', drawer && tab === 'chat'); $('btnSet').classList.toggle('on', drawer && tab === 'settings'); $('btnCust').classList.toggle('on', drawer && tab === 'custom');
+  $('emotes').hidden = !emotesOpen; $('btnEmote').classList.toggle('on', emotesOpen);
   if (drawer) {
     $('optReply').checked = !!state.settings.replyMode;
     $('optScale').value = String(state.settings.scale || 1);
@@ -424,10 +454,10 @@ new ResizeObserver(fit).observe($('stage'));
 
 hud.onState((s) => { state = s; if (s.pet) pet = s.pet; render(); });
 window.__push = (s) => { state = s; render(); };
-window.__ui = (o) => { if (o.sel) { const f = state.sessions.find((x) => x.id.startsWith(o.sel)); if (f) selected = f.id; } if (o.tab) tab = o.tab; if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
+window.__ui = (o) => { if (o.sel) { const f = state.sessions.find((x) => x.id.startsWith(o.sel)); if (f) selected = f.id; } if (o.tab) tab = o.tab; if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.emote) { playEmote(o.emote); emoteUntil = Infinity; } if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
 setInterval(render, 1500);
 render();
 
 if (location.search.includes('promo') || location.search.includes('dance')) { const s = document.createElement('script'); s.src = location.search.includes('dance') ? 'dance.js' : 'promo.js'; document.body.appendChild(s); }
 
-addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer) { drawer = false; render(); } });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && (drawer || emotesOpen)) { drawer = false; emotesOpen = false; render(); } });

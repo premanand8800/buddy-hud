@@ -310,6 +310,52 @@ if (renderer) {
         handHi(); legSwing = 0;
         break;
       }
+      // emotes (🎭 tray): the flat look's poses, as arm swings
+      case 'emote-nope': // hand up by the face, wagging, swaying side to side
+        rPX = 0.75; rPY = 1.2; rRotZ = 0.25 + Math.sin(t * 14) * 0.35; roll = Math.sin(t * 3.9) * 0.06; targetYaw = Math.sin(t * 3.9) * 0.3;
+        break;
+      case 'emote-point':
+        rRotZ = 1.57; rRotX = -0.6 + Math.sin(t * 14) * 0.15; targetYaw = -0.1;
+        break;
+      case 'emote-guns':
+        rRotZ = 1.57; lRotZ = -1.57; rRotX = -0.5 - (t % 0.6 < 0.1 ? 0.4 : 0); lRotX = -0.5 - ((t + 0.3) % 0.6 < 0.1 ? 0.4 : 0);
+        break;
+      case 'emote-dab':
+        rRotZ = 2.4; lRotZ = -0.6; lRotX = -1.3; lPosZ = 0.4; roll = -0.15; pitch = 0.12;
+        break;
+      case 'emote-shrug':
+        rRotZ = 1.0; lRotZ = -1.0; hop = Math.max(0, Math.sin(t * 4.8)) * 0.05;
+        break;
+      case 'emote-vibe':
+        roll = Math.sin(t * 7) * 0.12; targetYaw = Math.sin(t * 7) * 0.25; rRotZ = 2.6 + Math.sin(t * 7) * 0.3; lRotZ = -2.6 - Math.sin(t * 7 + 1.5) * 0.3;
+        break;
+      case 'emote-facepalm':
+        rPX = 0.25; rPY = 0.75; rPosZ = 0.55; rRotX = -1.4; pitch = 0.15; by = -0.04;
+        break;
+      case 'emote-shh':
+        rPX = 0.1; rPY = 0.45; rPosZ = 0.55; rRotX = -1.5; targetYaw = 0.1; roll = Math.sin(t * 2) * 0.03;
+        break;
+      case 'emote-scheme':
+        rPX = 0.2; rPY = 0.4; rPosZ = 0.5; lPX = -0.2; lPY = 0.4; lPosZ = 0.5; rRotX = -1.4 + Math.sin(t * 22) * 0.12; lRotX = -1.4 + Math.sin(t * 22 + 1.6) * 0.12; pitch = 0.1;
+        break;
+      case 'emote-perfect':
+        rPX = 0.7; rPY = 1.0; rRotZ = 0.6 + Math.sin(t * 12) * 0.1; rRotX = -0.4;
+        break;
+      case 'emote-pat':
+        lRotZ = -1.5; lRotX = -0.3 + Math.sin(t * 20) * 0.25; roll = -0.05; targetYaw = -0.3;
+        break;
+      case 'emote-sideeye':
+        targetYaw = 0.45; eyeX = 0.06; by = 0;
+        break;
+      case 'emote-sweat':
+        rPX = 0.3 + Math.sin(t * 12) * 0.25; rPY = 1.05; rPosZ = 0.45; rRotX = -1.5; eyeY = 0.03;
+        break;
+      case 'emote-scuba': {
+        const w = t * 7;
+        roll = Math.sin(w) * 0.12; targetYaw = Math.sin(w) * 0.4; hop = Math.abs(Math.sin(w)) * 0.08;
+        rRotZ = 1.3 + Math.sin(w) * 1.3; lRotZ = -1.3 + Math.sin(w) * 1.3; legSwing = Math.sin(w * 2) * 0.4;
+        break;
+      }
       default: // idle / asleep: still, slightly turned so the depth reads
         by = -0.01; targetYaw = 0.22; pitch = 0.05;
     }
@@ -339,7 +385,7 @@ if (renderer) {
     if (cs && cs.cape) cape.rotation.x = 0.12 + Math.sin(t * (st.costume === 'superman' ? 9 : 2.5)) * 0.1;
     canoe.visible = showCanoe; canoe.rotation.z = showCanoe ? Math.sin(t * 1.9 * 0.5) * 0.03 : 0;
     keyboard.visible = showKb; book.visible = showBook; lens.visible = showLens;
-    sun.visible = st.shades === 'sunglasses'; gog.visible = st.shades === 'goggles';
+    sun.visible = st.shades === 'sunglasses' && a !== 'emote-scuba'; gog.visible = st.shades === 'goggles' || a === 'emote-scuba';
     const free = ['idle', 'sit', 'look', 'walk'].includes(a);
     mug.visible = st.coffee && free;
     if (mug.visible && a !== 'walk') { const ph = (t % 7) / 7; if (ph > 0.58 && ph < 0.82) { const k2 = Math.sin((ph - 0.58) / 0.24 * Math.PI); handR.rotation.z = 1.1 * k2; handR.rotation.x = -1.3 * k2; } }
