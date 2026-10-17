@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.1
+
+- **New release signing key.** The previous key was never installed in the release pipeline, so 0.12.0 shipped without update signatures and 0.11.0/0.12.0 cannot update themselves to it. Install 0.12.1 by hand once (Download button or the GitHub release page); automatic updates work again from 0.12.1 onward, on macOS, Windows and Linux.
+
 ## 0.12.0
 
 - **Emotes** (🎭 button beside 💬 ⚙️ 🎨): a tray of 14 animated meme gestures: nope finger-wag, point, finger guns, dab, shrug, vibe with headphones, facepalm, shh, scheming, chef's-kiss "perfect", royal head pat, side-eye, nervous sweat and the scuba dance. While emoting the buddy gets a detailed cartoon look (eyes with lids and irises, brows, nose, mouths, blush, white gloves, sneakers and props) in every look, including 3D. Esc closes the tray.
