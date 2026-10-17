@@ -1,4 +1,4 @@
-// 3D look for the buddy: a soft-voxel version of the same character, animated procedurally.
+// 3D look for the buddy (CI gate test): a soft-voxel version of the same character, animated procedurally.
 // Bundled to renderer/buddy3d.bundle.js (npm run build:3d) so the app needs no module loader at runtime.
 // Contract: window.__buddy3d = { ok, update({ act, eyes, item, dir, color, color2 }) }
 import * as THREE from 'three';
