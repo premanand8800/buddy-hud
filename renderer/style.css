@@ -64,14 +64,15 @@ textarea:focus { border-color: var(--orange); }
 #btnSend { background: var(--orange); border-color: var(--orange); color: #fff; }
 
 /* ---------- dock ---------- */
-#dock { display: flex; align-items: flex-end; gap: 6px; }
-#pill { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 6px; border-radius: 999px; background: var(--glass); margin-bottom: 14px; }
+#dock { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+#dockRow { display: flex; align-items: center; gap: 8px; }
+#pill { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 6px; border-radius: 999px; background: var(--glass); }
 .arc { width: 30px; height: 30px; transform: rotate(-90deg); }
 .arc circle { fill: none; stroke-width: 4; }
 .arc .track { stroke: rgba(255,255,255,.12); }
 .arc .fill { stroke: var(--green); stroke-linecap: round; stroke-dasharray: 0 100; transition: stroke-dasharray .5s, stroke .5s; }
-.pt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
-.pt b { font-size: 12.5px; } .pt small { color: var(--dim); font-size: 11px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt { display: flex; align-items: baseline; gap: 8px; line-height: 1.15; white-space: nowrap; }
+.pt b { font-size: 12.5px; } .pt small { color: var(--dim); font-size: 11px; white-space: nowrap; }
 
 #mascot { position: relative; width: 160px; height: 150px; cursor: grab; }
 #mascot svg { width: 100%; height: 100%; overflow: visible; transition: filter .4s; }
@@ -173,10 +174,6 @@ body[data-act=idle] #clawd { --body: color-mix(in srgb, var(--orange) 80%, #000)
 .say .mdh { font-weight: 700; color: #fff; margin: 6px 0 2px; }
 .say .lnk { color: var(--orange2); text-decoration: underline; }
 
-/* model tag */
-#modelTag { position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 11.5px; white-space: nowrap; pointer-events: none; }
-#modelTag i { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
-#dock { padding-bottom: 14px; }
 
 
 /* files + settings */
@@ -314,14 +311,15 @@ body.skin3d #item3d { display: block; position: absolute; left: 50%; top: -6px; 
 #drawer section.panel .note { color: var(--dim); font-size: 12px; }
 #drawer section.panel .rowbtns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 #drawer section.panel .rowbtns .ver { margin-left: auto; font-size: 11px; opacity: .6; }
-#dockBtns { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+#dockBtns { display: flex; flex-direction: column; gap: 5px; }
 #dockBtns button { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px; background: var(--glass); display: grid; place-items: center; }
 #dockBtns button.on { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 25%, var(--glass)); }
 
 /* session strip */
-#strip { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 380px; }
-#strip .sc { display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 12px; cursor: pointer; max-width: 170px; }
+#strip { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+#strip .sc { display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 12px; cursor: pointer; max-width: 230px; }
 #strip .sc b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#strip .sc small { color: var(--dim); font-size: 11px; white-space: nowrap; }
 #strip .sc i { width: 8px; height: 8px; border-radius: 50%; background: #8a7f75; flex: none; }
 #strip .sc.working i { background: var(--green); animation: blink 1s steps(2) infinite; }
 #strip .sc.needs i { background: var(--amber); }
