@@ -1,6 +1,6 @@
 {
   "name": "buddy-hud",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "description": "A floating pixel buddy that shows what Claude Code is doing - live diffs, permissions, context, replies. Unofficial.",
   "main": "main.js",
   "scripts": {

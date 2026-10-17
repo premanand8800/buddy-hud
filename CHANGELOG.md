@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.4
+
+- Fix: the Linux AppImage still did not start on Wayland in 0.12.3. Restarting itself in X11 mode fails inside an AppImage (Chromium's relauncher cannot mount the image), so it now starts the AppImage from the running app instead.
+
 ## 0.12.3
 
 - **Emotes match the hero costume.** With a costume on, the gloves and sneakers take the costume's colours (red web-slinger gloves, gold gauntlets, steel, leather...), masked heroes get expressive mask lenses instead of cartoon eyes, heroes that show a face get the emote's eyes, mouth and blush on that face, and the costume's own eyes, smile, boots and hand props step aside so nothing overlaps. Flat looks and 3D.
