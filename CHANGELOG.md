@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.3
 
 - **Emotes match the hero costume.** With a costume on, the gloves and sneakers take the costume's colours (red web-slinger gloves, gold gauntlets, steel, leather...), masked heroes get expressive mask lenses instead of cartoon eyes, heroes that show a face get the emote's eyes, mouth and blush on that face, and the costume's own eyes, smile, boots and hand props step aside so nothing overlaps. Flat looks and 3D.
 - Fix: on Linux Wayland sessions the AppImage quit silently at start-up (it tried to restart itself in X11 mode from a mount that was already gone). It now restarts the AppImage file itself.
