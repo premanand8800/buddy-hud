@@ -10,6 +10,7 @@
   <div id="bubbles">
     <div id="perms"></div>
     <div id="onboard" class="bubble" hidden></div>
+    <div id="updbar" class="bubble" hidden></div>
     <div id="drawer" class="bubble" data-tab="details" hidden>
       <div id="dhead">
         <div class="segs">
@@ -55,6 +56,9 @@
         <div id="phoneBox" hidden></div>
         <div class="grp">Context window</div>
         <div class="note" id="ctxNote">Detected automatically from the model Claude is using.</div>
+        <div class="grp">Updates</div>
+        <label><input type="checkbox" id="optUpd"> 🔄 Check GitHub for new versions (one request, twice a day)</label>
+        <div class="rowbtns"><button id="btnUpdNow">Check now</button><span class="note" id="updStatus"></span></div>
         <div class="grp">App</div>
         <div class="rowbtns">
           <button id="btnHide">Hide</button>

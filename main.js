@@ -35,7 +35,7 @@ const sessions = new Map(); // id -> session
 const pendingPerms = new Map(); // id -> { res, sessionId, tool, summary, diff }
 const stopHolds = new Map(); // sessionId -> res
 const queued = new Map(); // sessionId -> [text]
-const DEFAULTS = { auraScore: 0, shades: 'none', coffee: false, thinkPose: 'scratch', aura: 'off', alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
+const DEFAULTS = { checkUpdates: true, dismissedUpdate: '', auraScore: 0, shades: 'none', coffee: false, thinkPose: 'scratch', aura: 'off', alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
 let settings = { ...DEFAULTS };
 try { const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings = { ...DEFAULTS, ...saved, alerts: { ...DEFAULTS.alerts, ...(saved.alerts || {}) } }; } catch {}
 const DAILY_FILE = path.join(os.homedir(), '.buddy-hud', 'daily.json');
@@ -59,6 +59,42 @@ function dailyTotals() {
   return t;
 }
 let selectedId = null;
+let update = null, updateStatus = 'not checked yet';
+// Update check (not an installer): one request to GitHub's public releases API, at launch and every 12 h.
+// A real silent auto-updater needs signed builds on macOS (we ship ad-hoc signed), so for now we only tell you and link the download.
+const semverGt = (a, b) => { const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number); for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0); } return false; };
+function pickAsset(assets) {
+  const want = process.platform === 'win32' ? /win-setup\.exe$/ : process.platform === 'darwin' ? new RegExp(`mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}\\.dmg$`) : /\.AppImage$/;
+  const a = (assets || []).find((x) => want.test(x.name));
+  return a ? a.browser_download_url : null;
+}
+function checkUpdate(manual) {
+  if (TEST && !process.env.BUDDY_UPDATE_URL) return;
+  if (!manual && settings.checkUpdates === false) return;
+  const url = new URL(process.env.BUDDY_UPDATE_URL || 'https://api.github.com/repos/premanand8800/buddy-hud/releases/latest');
+  const lib = url.protocol === 'http:' ? http : require('https');
+  updateStatus = 'checking…'; emit();
+  const req = lib.get(url, { headers: { 'User-Agent': 'buddy-hud-update-check', Accept: 'application/vnd.github+json' }, timeout: 10000 }, (res) => {
+    let body = ''; res.on('data', (d) => { body += d; if (body.length > 2e6) req.destroy(); });
+    res.on('end', () => {
+      try {
+        const r = JSON.parse(body);
+        if (!r.tag_name) throw new Error('no release found');
+        if (semverGt(r.tag_name, app.getVersion())) {
+          const isNew = !update || update.version !== r.tag_name;
+          update = { version: String(r.tag_name).replace(/^v/, ''), page: r.html_url, download: pickAsset(r.assets), notes: String(r.body || '').slice(0, 600) };
+          updateStatus = `update available: ${update.version}`;
+          if (isNew && settings.dismissedUpdate !== update.version) alertUser('done', 'Buddy HUD update available', `Version ${update.version} is out. Open the buddy to download it.`);
+        } else { update = null; updateStatus = `up to date (v${app.getVersion()})`; }
+      } catch (e) { updateStatus = 'could not check (' + e.message + ')'; }
+      emit();
+    });
+  });
+  req.on('error', (e) => { updateStatus = 'could not check (' + e.code + ')'; emit(); });
+  req.on('timeout', () => req.destroy());
+}
+setTimeout(() => checkUpdate(false), 8000);
+setInterval(() => checkUpdate(false), 12 * 3600 * 1000);
 let eventCount = 0, lastEventAt = 0, selfTestSeen = 0, selfTest = null;
 let win, hideTimer, seq = 0, pinned = false, userHidden = false, hooksCache = { t: 0, v: false };
 
@@ -526,7 +562,7 @@ function runSelfTest() {
 
 function snapshot() {
   return {
-    ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
+    update, updateStatus, ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
     sessions: [...sessions.values()].sort((a, b) => b.updated - a.updated).map((s) => ({
       ...s, _usageState: undefined, _chatState: undefined, _usage: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!s.tmux, queued: (queued.get(s.id) || []).length,
     })),
@@ -745,6 +781,9 @@ ipcMain.on('release', (_e, sessionId) => { releaseStop(sessionId); emit(); });
 ipcMain.on('fit', (_e, { w, h }) => fit(w, h));
 ipcMain.on('select', (_e, id) => { if (id !== selectedId) { selectedId = id; chatSig = ''; emit(); } });
 ipcMain.on('dismiss', (_e, id) => { const s = sessions.get(id); if (!s) return; try { dismissed.set(id, fs.statSync(s.transcript).mtimeMs); } catch { dismissed.set(id, Date.now()); } sessions.delete(id); queued.delete(id); emit(); });
+ipcMain.on('checkUpdate', () => checkUpdate(true));
+ipcMain.on('openUpdate', (_e, which) => { const u = update && (which === 'download' && update.download ? update.download : update.page); if (u && /^https:\/\/github\.com\/premanand8800\/buddy-hud\//.test(u)) shell.openExternal(u); });
+ipcMain.on('dismissUpdate', () => { if (update) { settings.dismissedUpdate = update.version; saveSettings(); emit(); } });
 ipcMain.on('seen', () => { lastSeenAt = Date.now(); });
 ipcMain.on('selfTest', () => runSelfTest());
 ipcMain.on('set', (_e, patch) => {

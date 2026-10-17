@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0
+
+- **Update notifications.** Buddy HUD checks GitHub's public releases once at launch and every 12 hours (one request; switch it off in Settings → Updates, or press "Check now"). When a newer version exists, a bubble offers **Download** (the installer for your OS), **Release notes** or **Later**, and a desktop notification appears once. This is a notifier, not a silent installer: true auto-update needs code-signed builds on macOS, which this project does not have yet.
+
 ## 0.8.0
 
 - **Aura farming mode** 🔥 (Customize → Aura → "Aura farming"), inspired by the Pacu Jalur "boat kid" meme: when Claude is idle the buddy puts on shades, stands in a little canoe on gentle waves and sways with its arms out, calm and unbothered, with a rotating aura. Works in the flat looks and 3D.

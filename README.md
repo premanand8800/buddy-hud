@@ -78,9 +78,13 @@ Claude Code [hooks](https://docs.claude.com/en/docs/claude-code/hooks) POST each
 - **Windows:** tested by a community member on Windows 11 (hooks, buddy, tests). **macOS:** not yet tested on a real machine. Please open an issue with what you see.
 - On Windows the hook is a plain `curl.exe` call (works from Git Bash, cmd and PowerShell). If Buddy HUD is not running, Claude Code may show a harmless non-blocking hook error. Reported working on Windows 11 by a tester.
 
+## Updating
+
+Buddy HUD tells you when a new version is out (a bubble with a Download button, and Settings → Updates → Check now). Download and install it over the old one; your settings are kept. It does not update itself silently yet (that needs code signing on macOS). To stop the check, untick "Check GitHub for new versions".
+
 ## Privacy and security
 
-- Everything stays on your machine. The app listens only on `127.0.0.1:47800` and sends nothing to any server.
+- Everything stays on your machine. The app listens only on `127.0.0.1:47800` and sends nothing to any server, with one exception: the optional update check asks GitHub's public releases API for the latest version number (no data about you is sent).
 - It reads the conversation transcript Claude Code already writes locally, only to show context use and Claude's last message.
 - The server rejects requests that carry a browser `Origin` header, so web pages cannot talk to it.
 - Allow/Deny works because the hook waits for your click; if the app is closed, Claude Code falls back to its normal prompt.
