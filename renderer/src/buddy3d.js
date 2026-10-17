@@ -280,20 +280,20 @@ if (renderer) {
   const wcol = new THREE.Vector3();
 
   // costume art decal: the same SVG art as the flat look, baked into a texture on the torso's front face
-  const decal = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.14), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); decal.position.set(0, 0.57, D / 2 + 0.004); decal.visible = false; body.add(decal);
+  const costDecal = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.14), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); costDecal.position.set(0, 0.57, D / 2 + 0.004); costDecal.visible = false; body.add(costDecal);
   let decalFor = '';
   function buildDecal(name) {
     decalFor = name;
     const art = window.COSTUME_ART && window.COSTUME_ART[name];
-    if (!art) { decal.visible = false; return; }
+    if (!art) { costDecal.visible = false; return; }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 114" width="640" height="456"><defs>${window.COSTUME_DEFS}</defs><g clip-path="url(#bodyClip)">${art.under}${art.over}</g></svg>`;
     const img = new Image();
     img.onload = () => {
       if (decalFor !== name) return;
       const cv = document.createElement('canvas'); cv.width = 640; cv.height = 456; cv.getContext('2d').drawImage(img, 0, 0, 640, 456);
       const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-      if (decal.material.map) decal.material.map.dispose();
-      decal.material.map = tex; decal.material.needsUpdate = true; decal.visible = true; dirty = true; settle = 12;
+      if (costDecal.material.map) costDecal.material.map.dispose();
+      costDecal.material.map = tex; costDecal.material.needsUpdate = true; costDecal.visible = true; dirty = true; settle = 12;
     };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
@@ -547,7 +547,7 @@ if (renderer) {
       if (o.color2) col2.set(o.color2);
       if ('costume' in o) {
         st.costume = o.costume;
-        if (o.costume === 'none') { decal.visible = false; decalFor = ''; } else if (decalFor !== o.costume) buildDecal(o.costume);
+        if (o.costume === 'none') { costDecal.visible = false; decalFor = ''; } else if (decalFor !== o.costume) buildDecal(o.costume);
         const cs = COST[o.costume];
         if (cs) { bodyMat.color.setHex(cs.body); bodyMat.emissive.setHex(cs.body); handBase.setHex(cs.hands); handMat.emissive.setHex(cs.hands); legMat.color.setHex(cs.legs); legMat.emissive.setHex(cs.legs); if (cs.cape) capeMat.color.setHex(cs.cape); }
         else { bodyMat.color.copy(col); bodyMat.emissive.copy(col); handMat.emissive.copy(col); legMat.color.copy(col); legMat.emissive.copy(col); }
