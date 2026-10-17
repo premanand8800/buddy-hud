@@ -14,7 +14,7 @@ A floating pixel buddy for [Claude Code](https://claude.com/claude-code). It sit
 - **Live diffs.** See the file, the line number and the exact lines Claude is changing.
 - **File counts.** The pill beside the buddy always shows unique files read and edited plus commands run. Open details for the file lists.
 - **Model colours.** The buddy and the UI change colour to match the model Claude is using, with the model name under the buddy.
-- **Context window.** A ring shows how full the context is.
+- **Context window.** A ring shows how full the context is. The window size (200k or 1M) is detected automatically from the model Claude Code is using; there is nothing to configure.
 - **Readable replies.** Claude's last message renders as formatted text (bold, code, lists), not raw markdown.
 - **Privacy mode.** One toggle blurs paths, code and conversation, handy for screen sharing and streaming.
 - **Permissions.** Allow, Deny or "ask in terminal" from the overlay, with a desktop notification.
@@ -29,7 +29,7 @@ A floating pixel buddy for [Claude Code](https://claude.com/claude-code). It sit
 - **Looks.** Bot (default), Cat, Classic (logo homage), or **3D (beta)**: a soft-voxel buddy with real lighting that turns to face where it walks, types on a little keyboard, holds up a book while reading and swings a magnifying glass while searching. 3D uses more CPU on machines without GPU acceleration (measured on a laptop without it: about 10% asleep, about 34% while Claude works, versus about 8% / 13% for the flat looks).
 - **Multiple sessions.** One tab per Claude Code session.
 
-Click the buddy (or the pill) for history, files and settings. Drag it anywhere.
+Click the buddy (or the pill) for details; the ⚙️ and 🎨 buttons beside it open Settings (alerts, privacy, phone) and Customize (look, size, walking). Drag it anywhere.
 
 ## Install
 

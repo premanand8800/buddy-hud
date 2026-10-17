@@ -301,3 +301,19 @@ body.skin3d #item3d { display: block; position: absolute; left: 50%; top: -6px; 
 
 .hint.warn { color: var(--amber); font-size: 12.5px; }
 .hint.warn b { color: #fff; }
+
+/* tabs: details / settings / customize */
+#dhead { gap: 8px; }
+.segs { display: flex; gap: 4px; }
+.seg { padding: 3px 9px; font-size: 12px; border-radius: 9px; }
+.seg.on { background: var(--orange); border-color: var(--orange); color: #fff; }
+#drawer section.panel { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+#drawer section.panel .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-top: 8px; }
+#drawer section.panel .grp:first-child { margin-top: 0; }
+#drawer section.panel label { display: flex; gap: 8px; align-items: center; }
+#drawer section.panel .note { color: var(--dim); font-size: 12px; }
+#drawer section.panel .rowbtns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+#drawer section.panel .rowbtns .ver { margin-left: auto; font-size: 11px; opacity: .6; }
+#dockBtns { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+#dockBtns button { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px; background: var(--glass); display: grid; place-items: center; }
+#dockBtns button.on { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 25%, var(--glass)); }

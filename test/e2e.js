@@ -72,6 +72,7 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     assert.ok(st.sessions[0].lastMsg.includes('**Done**'));
     assert.ok(/opus/.test(st.sessions[0].model));
     assert.ok(st.sessions[0].ctx.used >= 90000);
+    assert.strictEqual(st.sessions[0].ctx.max, 200000, 'standard window auto-detected');
     assert.strictEqual(st.sessions[0].summary.edited.length, 1);
     assert.strictEqual(st.health.state, 'ok');
 
@@ -109,6 +110,19 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     assert.strictEqual((await state()).sessions[0].status, 'permission', 'permission notification must not offer a reply box');
     await post({ session_id: 's1', hook_event_name: 'Notification', message: 'Claude is waiting for your input' });
     assert.strictEqual((await state()).sessions[0].status, 'waiting');
+
+    // context window is auto-detected: [1m] model setting or usage above 200k means 1M, otherwise 200k
+    const mkTr = (name, used) => { const p = path.join(home, name); fs.writeFileSync(p, JSON.stringify({ type: 'assistant', message: { id: name, model: 'claude-sonnet-5-5', content: [{ type: 'text', text: 'x' }], usage: { input_tokens: 10, cache_read_input_tokens: used, output_tokens: 5 } } }) + '\n'); return p; };
+    await post({ session_id: 'c1', cwd: '/tmp/c1', hook_event_name: 'SessionStart', model: 'claude-sonnet-5-5[1m]', transcript_path: mkTr('c1.jsonl', 50000) });
+    await post({ session_id: 'c2', cwd: '/tmp/c2', hook_event_name: 'SessionStart', model: 'claude-sonnet-5-5', transcript_path: mkTr('c2.jsonl', 300000) });
+    await post({ session_id: 'c3', cwd: '/tmp/c3', hook_event_name: 'SessionStart', model: 'claude-sonnet-5-5', transcript_path: mkTr('c3.jsonl', 50000) });
+    for (const id of ['c1', 'c2', 'c3']) await post({ session_id: id, hook_event_name: 'Stop', transcript_path: path.join(home, id + '.jsonl') });
+    st = await state();
+    const ctxOf = (id) => st.sessions.find((x) => x.id === id).ctx;
+    assert.strictEqual(ctxOf('c1').max, 1000000, '[1m] on the model string means 1M: ' + ctxOf('c1').why);
+    assert.strictEqual(ctxOf('c2').max, 1000000, 'usage above 200k proves 1M');
+    assert.strictEqual(ctxOf('c3').max, 200000, 'no signal means the standard 200k window');
+    for (const id of ['c1', 'c2', 'c3']) await post({ session_id: id, hook_event_name: 'SessionEnd' });
 
     // issue #1: one permission prompt = one alert; idle pings are quiet; real questions alert once per 30 s
     await post({ session_id: 'n1', cwd: '/tmp/n', hook_event_name: 'UserPromptSubmit', prompt: 'x' });

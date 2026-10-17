@@ -51,6 +51,7 @@ let state = { sessions: [], perms: [], settings: {}, hooksInstalled: true };
 
 let selected = null;
 let drawer = false;
+let tab = 'details';
 const open = new Set();
 let lastFit = '';
 
@@ -99,11 +100,14 @@ function dragger(el, onClick) {
 }
 dragger($('mascot'), toggleDrawer);
 $('pill').onclick = toggleDrawer;
-function toggleDrawer() { drawer = !drawer; render(); if (drawer) setTimeout(() => $('replyInput').focus(), 50); }
+function openTab(t) { if (drawer && tab === t) drawer = false; else { drawer = true; tab = t; } render(); }
+function toggleDrawer() { openTab('details'); }
+document.querySelectorAll('.seg').forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
+$('btnSet').onclick = () => openTab('settings');
+$('btnCust').onclick = () => openTab('custom');
 
 $('btnQuit').onclick = () => hud.send('quit');
 $('optReply').onchange = (e) => hud.send('set', { replyMode: e.target.checked });
-$('optCtx').onchange = (e) => hud.send('set', { ctxMax: +e.target.value });
 $('optScale').onchange = (e) => hud.send('set', { scale: +e.target.value });
 $('optAlways').onchange = (e) => hud.send('set', { alwaysShow: e.target.checked });
 $('optWalk').onchange = (e) => hud.send('set', { walk: e.target.checked });
@@ -255,14 +259,18 @@ function render() {
 
   // drawer
   $('drawer').hidden = !drawer;
+  $('drawer').dataset.tab = tab;
+  document.querySelectorAll('#drawer [data-t]').forEach((el) => { el.hidden = el.dataset.t !== tab; });
+  document.querySelectorAll('.seg').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  $('btnSet').classList.toggle('on', drawer && tab === 'settings'); $('btnCust').classList.toggle('on', drawer && tab === 'custom');
   if (drawer) {
     $('optReply').checked = !!state.settings.replyMode;
-    $('optCtx').value = String(state.settings.ctxMax || 200000);
     $('optScale').value = String(state.settings.scale || 1);
     $('optPrivacy').checked = !!state.settings.privacy;
     $('optWalk').checked = state.settings.walk !== false;
     $('optAlways').checked = state.settings.alwaysShow !== false;
     setHtml($('lastmsg'), s && s.lastMsg ? `<div class="fh">💬 Claude’s last message</div><div class="say">${md(s.lastMsg)}</div>` : '');
+    $('ctxNote').textContent = s ? `${fmt(s.ctx.max)} window for ${s.project}. ${s.ctx.why || ''}` : 'Detected automatically from the model Claude is using.';
     $('optSkin').value = (state.settings && state.settings.skin) || 'bot';
     const ph = state.phone || {};
     $('optPhone').checked = !!ph.enabled;
@@ -286,7 +294,7 @@ function render() {
     $('tabs').hidden = ss.length < 2;
     setHtml($('tabs'), ss.map((x) => `<button data-id="${esc(x.id)}" class="${x.id === selected ? 'on' : ''}">${esc(x.project)}</button>`).join(''));
     $('tabs').querySelectorAll('button').forEach((b) => (b.onclick = () => { selected = b.dataset.id; render(); }));
-    setHtml($('chips'), s ? `<span class="chip">🧠 ${fmt(s.ctx.used)} / ${fmt(s.ctx.max)}</span><span class="chip">📖 ${s.stats.reads} reads</span><span class="chip">✏️ ${s.stats.edits} edits</span><span class="chip">💻 ${s.stats.cmds} cmds</span><span class="chip">🛠️ ${s.stats.other} other</span><span class="chip proj">${esc(s.project)}</span>` : '');
+    setHtml($('chips'), s ? `<span class="chip" title="${esc(s.ctx.why || '')}">🧠 ${fmt(s.ctx.used)} / ${fmt(s.ctx.max)} <small style="opacity:.6">auto</small></span><span class="chip">📖 ${s.stats.reads} reads</span><span class="chip">✏️ ${s.stats.edits} edits</span><span class="chip">💻 ${s.stats.cmds} cmds</span><span class="chip">🛠️ ${s.stats.other} other</span><span class="chip proj">${esc(s.project)}</span>` : '');
     setHtml($('files'), s ? `<div><div class="fh">✏️ Edited — ${s.files.edited.length} file${s.files.edited.length === 1 ? '' : 's'}</div><div class="fl ed">${s.files.edited.slice(-12).reverse().map((p) => `<span data-open="${esc(p)}" title="${esc(p)}">${esc(base(p))}</span>`).join('') || '<span>none yet</span>'}</div></div><div><div class="fh">📖 Read — ${s.files.read.length} file${s.files.read.length === 1 ? '' : 's'}</div><div class="fl">${s.files.read.slice(-12).reverse().map((p) => `<span data-open="${esc(p)}" title="${esc(p)}">${esc(base(p))}</span>`).join('') || '<span>none yet</span>'}</div></div>` : '');
     setHtml($('feed'), s ? s.feed.map((f) => `<div class="item ${f.kind || ''}" data-id="${f.id}"><span class="e">${f.running ? '⏳' : f.emoji}</span><span class="t">${f.tool ? `<b>${esc(f.tool)}</b> ` : ''}${esc(plain(f.text))}</span><span class="m">${f.ms != null ? f.ms + 'ms · ' : ''}<span class="ago" data-t="${f.t}"></span></span>${f.diff && open.has(f.id) ? diffHtml(f.diff, 30) : ''}</div>`).join('') : '');
     $('feed').querySelectorAll('.item').forEach((el) => (el.onclick = () => { const id = +el.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); }));
@@ -335,7 +343,7 @@ new ResizeObserver(fit).observe($('stage'));
 
 hud.onState((s) => { state = s; if (s.pet) pet = s.pet; render(); });
 window.__push = (s) => { state = s; render(); };
-window.__ui = (o) => { if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
+window.__ui = (o) => { if (o.tab) tab = o.tab; if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
 setInterval(render, 1500);
 render();
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- **Settings reorganised** (requested by a Mac tester): the panel now has three tabs: **Details** (health, usage, files, activity), **Settings** (all notification and sound switches, replies, privacy, phone, quit) and **Customize** (character, size, walking, always show). Quick ⚙️ and 🎨 buttons beside the pill open Settings and Customize directly.
+- **Context window is auto-detected** (reported by the same tester): the manual 200k/1M selector is gone. The window is read from the model Claude Code is using (`[1m]` in the session's model or in your Claude Code `model` setting) and usage above 200k also proves 1M. The panel explains how it decided.
+
 ## 0.4.5
 
 - CI: every pull request now runs syntax, stale-3D-bundle, secret-scan, dependency-audit, unit (3 OS), end-to-end and packaging (3 OS) checks; `main` requires them to pass.

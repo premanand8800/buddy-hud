@@ -34,7 +34,7 @@ const sessions = new Map(); // id -> session
 const pendingPerms = new Map(); // id -> { res, sessionId, tool, summary, diff }
 const stopHolds = new Map(); // sessionId -> res
 const queued = new Map(); // sessionId -> [text]
-const DEFAULTS = { alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, ctxMax: 200000, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
+const DEFAULTS = { alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
 let settings = { ...DEFAULTS };
 try { const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings = { ...DEFAULTS, ...saved, alerts: { ...DEFAULTS.alerts, ...(saved.alerts || {}) } }; } catch {}
 const DAILY_FILE = path.join(os.homedir(), '.buddy-hud', 'daily.json');
@@ -98,7 +98,7 @@ function getSession(id, ev) {
     userHidden = false; // a brand-new session is worth showing again
     s = {
       id, cwd: ev.cwd || '', project: path.basename(ev.cwd || '') || 'session', model: '',
-      status: 'idle', note: '', tool: null, feed: [], ctx: { used: 0, max: settings.ctxMax },
+      status: 'idle', note: '', tool: null, feed: [], ctx: { used: 0, max: 200000, why: '' },
       stats: { reads: 0, edits: 0, cmds: 0, other: 0 }, files: { read: [], edited: [] }, prompt: '', transcript: ev.transcript_path || '',
       started: Date.now(), updated: Date.now(), ctxWarn: 0,
     };
@@ -176,6 +176,27 @@ function buildDiff(tool, i) {
 }
 
 // ---------- context window ----------
+// The real context window, auto-detected (no manual setting): Claude Code selects 1M with a "[1m]" suffix on the model
+// (SessionStart's model field, or the `model` in ~/.claude/settings.json / ANTHROPIC_MODEL); the transcript drops that
+// suffix, and a session can never hold more than 200k without it, so usage above 200k also proves 1M.
+let userModelCache = { t: 0, v: [] };
+function userModelSettings() {
+  if (Date.now() - userModelCache.t < 5000) return userModelCache.v;
+  const v = [];
+  try { const m = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude', 'settings.json'), 'utf8')).model; if (m) v.push(String(m)); } catch {}
+  if (process.env.ANTHROPIC_MODEL) v.push(process.env.ANTHROPIC_MODEL);
+  userModelCache = { t: Date.now(), v };
+  return v;
+}
+function detectCtx(s) {
+  const fam = famOf(s.model || s.modelRaw);
+  const raw = [s.modelRaw, ...userModelSettings()].filter(Boolean);
+  const explicit = raw.find((x) => /\[1m\]/i.test(x) && (!fam || famOf(x) === fam || /^(default|opusplan)/i.test(x)));
+  if (explicit) return { max: 1000000, why: `1M context: model setting "${explicit}" ends in [1m]` };
+  if (s.ctx.used > 200000) return { max: Math.max(1000000, Math.ceil(s.ctx.used / 1000000) * 1000000), why: `1M context: usage is already above 200k` };
+  return { max: 200000, why: 'Standard 200k window (no [1m] on the model). Auto-detected.' };
+}
+
 function readContext(s) {
   if (!s.transcript) return;
   try {
@@ -198,7 +219,7 @@ function readContext(s) {
       break;
     }
   } catch {}
-  s.ctx.max = /1m/i.test(s.model) || s.ctx.used > settings.ctxMax ? Math.max(1000000, settings.ctxMax) : settings.ctxMax;
+  Object.assign(s.ctx, detectCtx(s));
   try { usageLib.scan(s, s.transcript, prices); updateDaily(s); } catch {}
   // context nearly full: warn once per level, re-arm after /compact or /clear
   const pct = s.ctx.max ? (s.ctx.used / s.ctx.max) * 100 : 0;
@@ -247,7 +268,7 @@ function handleEvent(ev) {
 
   switch (name) {
     case 'SessionStart':
-      if (ev.model) s.model = ev.model;
+      if (ev.model) { s.model = ev.model; s.modelRaw = ev.model; }
       s.status = 'idle'; s.note = ev.source || 'started';
       pushFeed(s, { emoji: '🚀', text: `session ${ev.source || 'start'}`, kind: 'info' });
       break;
