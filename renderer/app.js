@@ -239,6 +239,7 @@ function render() {
   if (!svg.dataset.costume) svg.removeAttribute('data-costume');
   svg.dataset.shades = farm ? 'sunglasses' : (st0.shades || 'none'); svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
   document.body.dataset.aura = st0.aura || 'off';
+  if (st0.costume && st0.costume !== 'none') document.body.dataset.costume = st0.costume; else document.body.removeAttribute('data-costume');
   svg.dataset.act = a.act; svg.dataset.eyes = a.eyes; svg.dataset.look = a.look;
   $('item').textContent = a.item; $('item2').textContent = a.item2;
   if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch', costume: st0.costume || 'none' });
