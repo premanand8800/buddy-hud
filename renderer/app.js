@@ -429,6 +429,6 @@ window.__ui = (o) => { if (o.sel) { const f = state.sessions.find((x) => x.id.st
 setInterval(render, 1500);
 render();
 
-if (location.search.includes('promo') || location.search.includes('dance')) { const s = document.createElement('script'); s.src = location.search.includes('dance') ? 'dance.js' : 'promo.js'; document.body.appendChild(s); }
+if (/promo|dance|heroes/.test(location.search)) { const s = document.createElement('script'); s.src = location.search.includes('heroes') ? 'heroes.js' : location.search.includes('dance') ? 'dance.js' : 'promo.js'; document.body.appendChild(s); }
 
 addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer) { drawer = false; render(); } });

@@ -520,7 +520,7 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 @keyframes capeFlutter { from { transform: skewX(-6deg) scaleY(1); } to { transform: skewX(8deg) scaleY(1.08); } }
 
 /* batman: bat-signal + grapple, cape billows */
-.st-batman .cone { fill: rgba(255,248,200,.14); animation: signal 3s ease-in-out infinite; }
+.st-batman .cone { fill: url(#coneGrad); animation: signal 3s ease-in-out infinite; }
 @keyframes signal { 50% { fill: rgba(255,248,200,.26); } }
 .st-batman .moon circle { fill: #fff6c8; filter: drop-shadow(0 0 10px #fff6c8); } .st-batman .batsil { fill: #111; }
 .st-batman .grapple { fill: none; stroke: #bfc5cf; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 8 5; opacity: 0; animation: grapple 3.2s infinite; }
