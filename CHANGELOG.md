@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Hero costumes** (Customize → Hero costumes): seven original look-alike costumes with their own idle stunts, in the flat looks and in 3D: 🕷️ Web Slinger (swings from a web), ⚡ Thunder God (hammer, storm cloud and lightning), 🛡️ Star Shield (throws and catches its shield), 🤖 Iron Armor (hovers on jets, fires a repulsor), 🔮 Mystic Sorcerer (spinning mandalas), 🦸 Sky Guardian (flies) and 🦇 Night Vigilante (bat-signal, grapple, billowing cape). While Claude works the hero keeps its costume and does the usual typing/reading moves. They are unofficial fan-style costumes with neutral names, not licensed characters.
+
 ## 0.11.0
 
 - **Automatic updates on macOS.** When a new release is out, Buddy HUD downloads it in the background, checks it against GitHub's SHA-256 checksum, verifies the app's identity, version and signature, and then offers **Restart to update** (or installs it the next time you quit). No browser download, so no "damaged" or "can't be checked for malware" prompt on updates. Needs the app in a folder it can write to (e.g. Applications); otherwise, and on Windows/Linux, you get the Download button as before. This version still has to be installed by hand once; updates after it are automatic.
