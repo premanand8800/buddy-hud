@@ -29,7 +29,7 @@ jobs:
             dist/*.zip
             dist/*.exe
   sign-updates:
-    # Signs the macOS update zips so the in-app updater accepts them. Runs in the "release" environment: the signing key is
+    # Signs the update files (macOS zips, Windows installer, Linux AppImage) so the in-app updater accepts them. Runs in the "release" environment: the signing key is
     # an environment secret and each run needs the repository owner's approval, so a stray tag cannot publish a signed update.
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
@@ -39,12 +39,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - name: Sign the macOS zips
+      - name: Sign the update files (macOS zips, Windows installer, Linux AppImage)
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
         run: |
           mkdir signed && cd signed
-          gh release download "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --pattern '*mac-*.zip'
-          node ../scripts/sign-release.js *.zip
+          gh release download "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --pattern '*mac-*.zip' --pattern '*win-setup.exe' --pattern '*.AppImage'
+          node ../scripts/sign-release.js *.zip *-win-setup.exe *.AppImage
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber *.sig

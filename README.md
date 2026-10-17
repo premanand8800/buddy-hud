@@ -83,11 +83,11 @@ Messages you type in the buddy's Chat tab reach Claude Code like this:
 
 ## Updating
 
-Buddy HUD tells you when a new version is out (a bubble with a Download button, and Settings → Updates → Check now). Download and install it over the old one; your settings are kept. It does not update itself silently yet (that needs code signing on macOS). To stop the check, untick "Check GitHub for new versions".
+Buddy HUD checks for new versions and, on **macOS, Windows (installer) and Linux (AppImage)**, downloads them in the background, verifies them, and offers **Restart to update** (or installs when you quit). Your settings are kept. The Windows portable `.exe` and Linux `.deb` installs just get a Download button. To stop the check, untick "Check GitHub for new versions" in Settings → Updates.
 
 ### How updates are protected
 
-The macOS in-app updater does not trust GitHub alone. It downloads only from this repository's releases, checks the file's SHA-256, unpacks it, checks the bundle id, version and code signature, and **requires an Ed25519 signature** made with a release key that never leaves the repository's protected `release` environment (every release run needs the owner's approval). The matching public key is built into the app. If anything fails, nothing is installed and you get the normal Download button.
+The in-app updater (all three systems) does not trust GitHub alone. It downloads only from this repository's releases, checks the file's SHA-256, unpacks it, checks the bundle id, version and code signature, and **requires an Ed25519 signature** made with a release key that never leaves the repository's protected `release` environment (every release run needs the owner's approval). The matching public key is built into the app. If anything fails, nothing is installed and you get the normal Download button.
 
 ## Privacy and security
 
