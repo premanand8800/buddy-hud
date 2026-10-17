@@ -420,3 +420,7 @@ body[data-aura=glow] #mascot, body[data-aura=max] #mascot { margin: 26px 40px 8p
 @keyframes auraPop { 0% { opacity: 0; transform: translateY(40px) scale(.7); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: translateY(-6px) scale(1); } 100% { opacity: 0; transform: translateY(-150px) scale(1); } }
 
 body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
+
+#updbar { border-color: var(--green); display: flex; flex-direction: column; gap: 6px; }
+#updbar .notes { color: var(--dim); font-size: 12px; max-height: 70px; overflow-y: auto; white-space: pre-wrap; }
+#updbar .btnRow { display: flex; gap: 8px; } #updbar .primary { background: var(--green); border-color: var(--green); color: #0c0a09; font-weight: 700; }

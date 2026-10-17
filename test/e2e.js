@@ -10,7 +10,7 @@ const { spawn, exec } = require('child_process');
 const PORT = 47811;
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'buddy-e2e-'));
 fs.mkdirSync(path.join(home, 'AppData', 'Roaming'), { recursive: true }); // Windows: Electron resolves userData under USERPROFILE
-const env = { ...process.env, HOME: home, USERPROFILE: home, HUD_TEST: '1', HUD_PHONE: '1', BUDDY_PHONE_PORT: '47813', BUDDY_PORT: String(PORT), XDG_SESSION_TYPE: 'x11' };
+const env = { ...process.env, HOME: home, USERPROFILE: home, HUD_TEST: '1', BUDDY_UPDATE_URL: 'http://127.0.0.1:47815/latest', HUD_PHONE: '1', BUDDY_PHONE_PORT: '47813', BUDDY_PORT: String(PORT), XDG_SESSION_TYPE: 'x11' };
 process.env.HOME = home; process.env.USERPROFILE = home; process.env.BUDDY_PORT = String(PORT);
 const { run } = require('../install-hooks');
 run(false); // real installer, into the temp HOME
@@ -18,6 +18,7 @@ fs.mkdirSync(path.join(home, '.buddy-hud'), { recursive: true });
 fs.writeFileSync(path.join(home, '.buddy-hud', 'settings.json'), JSON.stringify({ phone: { enabled: true, token: 'tok123' }, replyMode: true }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const mock = http.createServer((q, r) => { r.setHeader('Content-Type', 'application/json'); r.end(JSON.stringify({ tag_name: 'v99.0.0', html_url: 'https://github.com/premanand8800/buddy-hud/releases/tag/v99.0.0', body: 'mock notes', assets: [] })); }).listen(47815, '127.0.0.1');
 const req = (method, url, body, headers = {}) => new Promise((resolve, reject) => {
   const r = http.request({ host: '127.0.0.1', port: PORT, path: url, method, headers, agent: false }, (res) => {
     let out = ''; res.on('data', (d) => (out += d)); res.on('end', () => resolve({ status: res.statusCode, body: out }));
@@ -96,6 +97,10 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     st = await state();
     assert.strictEqual(st.sessions[0].status, 'waiting');
     assert.ok(st.sessions[0].note.includes('Which DB?'));
+
+    // update check: a newer release is reported (mock GitHub API), an equal one is not
+    st = await waitFor(async () => { const s = await state(); return s.update && s; }, 'update notice from mock release API', 20000);
+    assert.strictEqual(st.update.version, '99.0.0'); assert.ok(/^http/.test(st.update.page));
 
     // hostile / broken input never crashes or creates junk
     assert.strictEqual((await req('POST', '/hook', 'not json')).body, '{}');
@@ -198,7 +203,7 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     failed = true; console.error('e2e FAILED:', e.message, e.where || '');
   } finally {
     const exited = new Promise((r) => app.once('exit', r));
-    app.kill('SIGKILL'); await exited;
+    app.kill('SIGKILL'); await exited; mock.close();
     try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); } catch {} // Windows: helper processes release files late
     process.exit(failed ? 1 : 0);
   }

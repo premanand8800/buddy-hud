@@ -128,6 +128,8 @@ $('optShades').onchange = (e) => hud.send('set', { shades: e.target.value });
 $('optCoffee').onchange = (e) => hud.send('set', { coffee: e.target.checked });
 $('optThink').onchange = (e) => hud.send('set', { thinkPose: e.target.value });
 $('optAura').onchange = (e) => hud.send('set', { aura: e.target.value });
+$('optUpd').onchange = (e) => hud.send('set', { checkUpdates: e.target.checked });
+$('btnUpdNow').onclick = () => hud.send('checkUpdate');
 $('optSkin').onchange = (e) => hud.send('set', { skin: e.target.value });
 $('optPhone').onchange = (e) => hud.send('phone', { enabled: e.target.checked });
 $('optPrivacy').onchange = (e) => hud.send('set', { privacy: e.target.checked });
@@ -295,6 +297,7 @@ function render() {
     setHtml($('lastmsg'), s && s.lastMsg ? `<div class="fh">💬 Claude’s last message</div><div class="say">${md(s.lastMsg)}</div>` : '');
     $('ctxNote').textContent = s ? `${fmt(s.ctx.max)} window for ${s.project}. ${s.ctx.why || ''}` : 'Detected automatically from the model Claude is using.';
     $('optShades').value = st0.shades || 'none'; $('optCoffee').checked = !!st0.coffee; $('optThink').value = st0.thinkPose || 'scratch'; $('optAura').value = st0.aura || 'off';
+    $('optUpd').checked = st0.checkUpdates !== false; $('updStatus').textContent = state.updateStatus || '';
     $('optSkin').value = (state.settings && state.settings.skin) || 'bot';
     const ph = state.phone || {};
     $('optPhone').checked = !!ph.enabled;
@@ -322,6 +325,15 @@ function render() {
     setHtml($('files'), s ? `<div><div class="fh">✏️ Edited — ${s.files.edited.length} file${s.files.edited.length === 1 ? '' : 's'}</div><div class="fl ed">${s.files.edited.slice(-12).reverse().map((p) => `<span data-open="${esc(p)}" title="${esc(p)}">${esc(base(p))}</span>`).join('') || '<span>none yet</span>'}</div></div><div><div class="fh">📖 Read — ${s.files.read.length} file${s.files.read.length === 1 ? '' : 's'}</div><div class="fl">${s.files.read.slice(-12).reverse().map((p) => `<span data-open="${esc(p)}" title="${esc(p)}">${esc(base(p))}</span>`).join('') || '<span>none yet</span>'}</div></div>` : '');
     setHtml($('feed'), s ? s.feed.map((f) => `<div class="item ${f.kind || ''}" data-id="${f.id}"><span class="e">${f.running ? '⏳' : f.emoji}</span><span class="t">${f.tool ? `<b>${esc(f.tool)}</b> ` : ''}${esc(plain(f.text))}</span><span class="m">${f.ms != null ? f.ms + 'ms · ' : ''}<span class="ago" data-t="${f.t}"></span></span>${f.diff && open.has(f.id) ? diffHtml(f.diff, 30) : ''}</div>`).join('') : '');
     $('feed').querySelectorAll('.item').forEach((el) => (el.onclick = () => { const id = +el.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); }));
+  }
+
+  // update available (shown once per version until dismissed; also always reachable in Settings)
+  const up = state.update;
+  const showUpd = !!up && state.settings.dismissedUpdate !== up.version;
+  $('updbar').hidden = !showUpd;
+  if (showUpd) {
+    setHtml($('updbar'), `<div class="h">⬆️ <span>Buddy HUD ${esc(up.version)} is available</span><span class="grow"></span><span class="dim">you have v${esc(state.version || '')}</span></div>${up.notes ? `<div class="notes">${esc(up.notes)}</div>` : ''}<div class="btnRow"><button class="primary" id="updGo">Download${up.download ? '' : ' page'}</button><button id="updPage">Release notes</button><button id="updLater">Later</button></div>`);
+    $('updGo').onclick = () => hud.send('openUpdate', 'download'); $('updPage').onclick = () => hud.send('openUpdate', 'page'); $('updLater').onclick = () => hud.send('dismissUpdate');
   }
 
   // onboarding / empty states
