@@ -10,46 +10,66 @@
   <div id="bubbles">
     <div id="perms"></div>
     <div id="onboard" class="bubble" hidden></div>
-    <div id="drawer" class="bubble" hidden>
-      <div id="dhead"><b>Details</b><span class="grow"></span><button id="btnClose" title="Close (Esc)">✕</button></div>
-      <div id="health"></div>
-      <div id="tabs"></div>
-      <div class="stats" id="chips"></div>
-      <div id="lastmsg"></div>
-      <div id="usage"></div>
-      <div id="files"></div>
-      <div class="feedHead">Activity</div>
-      <div id="feed"></div>
-      <div id="settings">
-        <div class="grp">Alerts</div>
-        <label><input type="checkbox" id="alNotify"> 🔔 Notifications</label>
+    <div id="drawer" class="bubble" data-tab="details" hidden>
+      <div id="dhead">
+        <div class="segs">
+          <button data-tab="details" class="seg on">📋 Details</button>
+          <button data-tab="settings" class="seg">⚙️ Settings</button>
+          <button data-tab="custom" class="seg">🎨 Customize</button>
+        </div>
+        <span class="grow"></span>
+        <button id="btnClose" title="Close (Esc)">✕</button>
+      </div>
+
+      <section data-t="details">
+        <div id="health"></div>
+        <div id="tabs"></div>
+        <div class="stats" id="chips"></div>
+        <div id="lastmsg"></div>
+        <div id="usage"></div>
+        <div id="files"></div>
+        <div class="feedHead">Activity</div>
+        <div id="feed"></div>
+      </section>
+
+      <section data-t="settings" class="panel">
+        <div class="grp">Notifications &amp; sound</div>
+        <label><input type="checkbox" id="alNotify"> 🔔 Desktop notifications</label>
         <label><input type="checkbox" id="alSound"> 🔊 Sound</label>
-        <label><input type="checkbox" id="alDone"> ✅ finished</label>
-        <label><input type="checkbox" id="alAsk"> 🙋 needs me</label>
-        <label><input type="checkbox" id="alStuck"> ⏳ stuck / context</label>
-        <label><input type="checkbox" id="alDnd"> 🌙 Do not disturb</label>
+        <label><input type="checkbox" id="alDone"> ✅ When Claude finishes</label>
+        <label><input type="checkbox" id="alAsk"> 🙋 When Claude needs me</label>
+        <label><input type="checkbox" id="alStuck"> ⏳ Seems stuck / context nearly full</label>
+        <label><input type="checkbox" id="alDnd"> 🌙 Do not disturb (silences everything above)</label>
+        <div class="grp">Replies</div>
+        <label title="Experimental: the terminal shows 'hook running' while waiting"><input type="checkbox" id="optReply"> 📡 Hold turn-end so I can reply from here</label>
+        <div class="grp">Privacy</div>
+        <label><input type="checkbox" id="optPrivacy"> 🙈 Blur paths, code and messages (screen sharing)</label>
         <div class="grp">Phone</div>
         <label title="Approve permissions and reply from your phone on the same Wi-Fi"><input type="checkbox" id="optPhone"> 📱 Phone access (same Wi-Fi)</label>
         <div id="phoneBox" hidden></div>
-        <div class="grp">Display</div>
-        <label><input type="checkbox" id="optAlways"> 👀 Always show (even when Claude is closed)</label>
-        <label><input type="checkbox" id="optWalk"> 🚶 Walk around when idle</label>
-        <label>Look
+        <div class="grp">Context window</div>
+        <div class="note" id="ctxNote">Detected automatically from the model Claude is using.</div>
+        <div class="grp">App</div>
+        <div class="rowbtns">
+          <button id="btnHide">Hide</button>
+          <button id="btnQuit">⏻ Quit</button>
+          <span class="ver" id="ver"></span>
+        </div>
+      </section>
+
+      <section data-t="custom" class="panel">
+        <div class="grp">Look</div>
+        <label>Character
           <select id="optSkin"><option value="bot">Bot</option><option value="cat">Cat</option><option value="classic">Classic (logo homage)</option><option value="3d">3D (beta)</option></select>
         </label>
         <label>Size
           <select id="optScale"><option value="0.85">Small</option><option value="1">Normal</option><option value="1.25">Large</option></select>
         </label>
-        <label><input type="checkbox" id="optPrivacy"> 🙈 Privacy (blur paths &amp; code)</label>
-        <label>🧠 Window
-          <select id="optCtx"><option value="200000">200k</option><option value="1000000">1M</option></select>
-        </label>
-        <label title="Experimental: the terminal shows 'hook running' while waiting"><input type="checkbox" id="optReply"> 📡 Hold turn-end for replies</label>
-        <span class="grow"></span>
-        <button id="btnHide">Hide</button>
-        <button id="btnQuit">⏻ Quit</button>
-        <span class="ver" id="ver"></span>
-      </div>
+        <div class="grp">Behaviour</div>
+        <label><input type="checkbox" id="optAlways"> 👀 Always show, even when Claude is closed</label>
+        <label><input type="checkbox" id="optWalk"> 🚶 Walk around when idle</label>
+        <div class="note">The buddy's colour follows the model Claude is using.</div>
+      </section>
     </div>
     <div id="action" class="bubble" hidden></div>
     <div id="reply" class="bubble" hidden>
@@ -63,6 +83,7 @@
   </div>
 
   <div id="dock">
+    <div id="dockBtns"><button id="btnSet" title="Settings">⚙️</button><button id="btnCust" title="Customize">🎨</button></div>
     <button id="pill" title="details">
       <svg class="arc" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="track"/><circle cx="18" cy="18" r="15" class="fill" id="arc" pathLength="100"/></svg>
       <i id="hdot"></i><span class="pt"><b id="pillPct">0%</b><small id="pillSub">idle</small></span>
