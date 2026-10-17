@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, screen, Notification, Menu, Tray, nativeIma
 const crypto = require('crypto');
 const usageLib = require('./lib/usage');
 const chatLib = require('./lib/chat');
+const macUpdate = require('./lib/macupdate');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -60,8 +61,9 @@ function dailyTotals() {
 }
 let selectedId = null;
 let update = null, updateStatus = 'not checked yet';
-// Update check (not an installer): one request to GitHub's public releases API, at launch and every 12 h.
-// A real silent auto-updater needs signed builds on macOS (we ship ad-hoc signed), so for now we only tell you and link the download.
+// Update check: one request to GitHub's public releases API, at launch and every 12 h.
+// On macOS a packaged app that can write to its own location also downloads, verifies and installs the update
+// itself (lib/macupdate.js); everywhere else we tell you and link the download.
 const semverGt = (a, b) => { const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number); for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0); } return false; };
 function pickAsset(assets) {
   const want = process.platform === 'win32' ? /win-setup\.exe$/ : process.platform === 'darwin' ? new RegExp(`mac-${process.arch === 'arm64' ? 'arm64' : 'x64'}\\.dmg$`) : /\.AppImage$/;
@@ -81,10 +83,12 @@ function checkUpdate(manual) {
         const r = JSON.parse(body);
         if (!r.tag_name) throw new Error('no release found');
         if (semverGt(r.tag_name, app.getVersion())) {
-          const isNew = !update || update.version !== r.tag_name;
-          update = { version: String(r.tag_name).replace(/^v/, ''), page: r.html_url, download: pickAsset(r.assets), notes: String(r.body || '').slice(0, 600) };
-          updateStatus = `update available: ${update.version}`;
-          if (isNew && settings.dismissedUpdate !== update.version) alertUser('done', 'Buddy HUD update available', `Version ${update.version} is out. Open the buddy to download it.`);
+          const isNew = !update || update.version !== String(r.tag_name).replace(/^v/, '');
+          if (isNew) {
+            update = { version: String(r.tag_name).replace(/^v/, ''), page: r.html_url, download: pickAsset(r.assets), notes: String(r.body || '').slice(0, 600), stage: '', progress: 0, err: '' };
+            updateStatus = `update available: ${update.version}`;
+            if (!startSelfUpdate(r.assets) && settings.dismissedUpdate !== update.version) alertUser('done', 'Buddy HUD update available', `Version ${update.version} is out. Open the buddy to download it.`);
+          } else if (manual && update.stage === 'error') startSelfUpdate(r.assets);
         } else { update = null; updateStatus = `up to date (v${app.getVersion()})`; }
       } catch (e) { updateStatus = 'could not check (' + e.message + ')'; }
       emit();
@@ -92,6 +96,40 @@ function checkUpdate(manual) {
   });
   req.on('error', (e) => { updateStatus = 'could not check (' + e.code + ')'; emit(); });
   req.on('timeout', () => req.destroy());
+}
+// macOS self-update: download + verify in the background, then "Restart to update" (or install on quit).
+const UPDATE_DIR = path.join(app.getPath('temp'), 'buddy-hud-update');
+let stagedApp = null, updateInstalling = false;
+const selfBundle = () => (isMac && app.isPackaged ? macUpdate.bundleOf(process.execPath) : null);
+function startSelfUpdate(assets) {
+  if (!isMac) return false;
+  const bundle = selfBundle();
+  const why = bundle ? macUpdate.blocker(bundle) : 'development build';
+  const zip = macUpdate.pickZip(assets);
+  if (why || !zip) { update.manualReason = why || 'no verified download in this release'; return false; }
+  const u = update;
+  u.stage = 'downloading'; u.progress = 0; stagedApp = null; emit();
+  let lastEmit = 0;
+  macUpdate.prepare({ zip, version: u.version, stagingDir: UPDATE_DIR, onProgress: (f) => { u.progress = f; if (Date.now() - lastEmit > 500) { lastEmit = Date.now(); emit(); } } })
+    .then((staged) => {
+      if (update !== u) return;
+      stagedApp = staged; u.stage = 'ready'; updateStatus = `update ${u.version} ready, restart to install`; emit();
+      alertUser('done', 'Buddy HUD update ready', `Version ${u.version} is downloaded. Restart the buddy to install it.`);
+    })
+    .catch((e) => {
+      if (update !== u) return;
+      u.stage = 'error'; u.err = e.message; updateStatus = `update download failed (${e.message})`; emit();
+      if (settings.dismissedUpdate !== u.version) alertUser('done', 'Buddy HUD update available', `Version ${u.version} is out. Open the buddy to download it.`);
+    });
+  return true;
+}
+function installUpdate(relaunch) {
+  if (!stagedApp || updateInstalling) return false;
+  const bundle = selfBundle();
+  if (!bundle || macUpdate.blocker(bundle)) return false;
+  updateInstalling = true;
+  macUpdate.install({ staged: stagedApp, target: bundle, pid: process.pid, relaunch, stagingDir: UPDATE_DIR });
+  return true;
 }
 setTimeout(() => checkUpdate(false), 8000);
 setInterval(() => checkUpdate(false), 12 * 3600 * 1000);
@@ -804,6 +842,7 @@ ipcMain.on('fit', (_e, { w, h }) => fit(w, h));
 ipcMain.on('select', (_e, id) => { if (id !== selectedId) { selectedId = id; chatSig = ''; emit(); } });
 ipcMain.on('dismiss', (_e, id) => { const s = sessions.get(id); if (!s) return; try { dismissed.set(id, fs.statSync(s.transcript).mtimeMs); } catch { dismissed.set(id, Date.now()); } sessions.delete(id); queued.delete(id); emit(); });
 ipcMain.on('checkUpdate', () => checkUpdate(true));
+ipcMain.on('installUpdate', () => { if (installUpdate(true)) app.quit(); });
 ipcMain.on('openUpdate', (_e, which) => { const u = update && (which === 'download' && update.download ? update.download : update.page); if (u && /^https:\/\/github\.com\/premanand8800\/buddy-hud\//.test(u)) shell.openExternal(u); });
 ipcMain.on('dismissUpdate', () => { if (update) { settings.dismissedUpdate = update.version; saveSettings(); emit(); } });
 const HELPER = path.join(os.homedir(), '.buddy-hud', 'bin', 'buddy-claude');
@@ -1020,4 +1059,4 @@ app.whenReady().then(async () => {
   }
 });
 app.on('window-all-closed', (e) => e.preventDefault());
-app.on('before-quit', () => { for (const id of [...stopHolds.keys()]) releaseStop(id); for (const [, p] of pendingPerms) try { p.res.end('{}'); } catch {} });
+app.on('before-quit', () => { installUpdate(false); for (const id of [...stopHolds.keys()]) releaseStop(id); for (const [, p] of pendingPerms) try { p.res.end('{}'); } catch {} });
