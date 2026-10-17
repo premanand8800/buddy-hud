@@ -24,6 +24,9 @@ def walk(el, m, inh, out):
     for k in PAINT:
         if el.get(k) is not None: inh[k] = el.get(k)
     if el.get('class') == 'lidf': inh['fill'] = 'LIDF'
+    if el.get('class') in ('pup', 'ew'): inh['c'] = el.get('class')  # restyled for masked hero costumes
+    if el.get('class') in ('eL', 'eR', 'bL', 'bR'): inh['side'] = el.get('class')[1]  # moved in on costumes that show a face
+    if el.get('class') in ('mo', 'bk'): inh['side'] = 'M'  # nose, mouth and blush: smaller and higher on those costumes
     op = float(el.get('opacity', 1)) * inh.get('o', 1)
     inh['o'] = op
     t = el.tag
@@ -48,6 +51,8 @@ def walk(el, m, inh, out):
         if inh.get('stroke-linejoin'): g['lj'] = inh['stroke-linejoin']
         if inh.get('stroke-dasharray'): g['da'] = [r(v) for v in inh['stroke-dasharray'].split()]
     if op != 1: g['o'] = round(op, 3)
+    if inh.get('c'): g['c'] = inh['c']
+    if inh.get('side'): g['sd'] = inh['side']
     if 'f' in g or 's' in g: out.append(g)
 
 FACE = {}
@@ -59,6 +64,8 @@ for k, v in emo.E.items():
 
 src = ('// Generated: the emote face and effects (2D layer) as draw ops for the 3D face decal. Coordinates are the flat\n'
        '// artwork\'s (x 0..160, y 0..114 is the body front). k: p path / e ellipse / r rect; m: transform; LIDF: lid colour.\n'
-       'export const EMOTE_FACE = ' + json.dumps(FACE, separators=(',', ':')) + ';\n')
+       'export const EMOTE_FACE = ' + json.dumps(FACE, separators=(',', ':')) + ';\n'
+       '// hero costume colours for gloves and shoes while emoting; lens: [fill, stroke, width] for masked heroes (c: "ew"/"pup")\n'
+       'export const EMOTE_THEME = ' + json.dumps(emo.THEME, separators=(',', ':')) + ';\n')
 open(sys.argv[1], 'w').write(src)
 print({k: len(v) for k, v in FACE.items()}, len(src))
