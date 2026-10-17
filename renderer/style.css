@@ -730,3 +730,31 @@ body[data-costume] #stage { padding-top: 24px; }
 @keyframes eSwim { 0%, 100% { translate: -20px 0; rotate: -6deg; } 50% { translate: 20px 4px; rotate: 6deg; } }
 @keyframes eKickA { 0%, 100% { translate: 0 0; rotate: 0deg; } 25% { translate: 0 -14px; rotate: 14deg; } 50% { translate: 0 0; rotate: 0deg; } }
 @keyframes eKickB { 0%, 50%, 100% { translate: 0 0; rotate: 0deg; } 75% { translate: 0 -14px; rotate: -14deg; } }
+/* hero costume while emoting: hide the costume eyes, smile and boots (the emote brings its own) */
+#clawd[data-act^=emote] .cos .cf, #clawd[data-act^=emote] .cosu .cf, #clawd[data-act^=emote] .cos .cb { display: none; }
+#clawd[data-costume=spider] { --gv: #c1272d; --gl: #0d0d0d; --gs: #8f1d22; --gk: #0d0d0d; }
+#clawd[data-costume=spider] .shoe .su { fill: #c1272d; stroke: #0d0d0d; } #clawd[data-costume=spider] .shoe .ss { fill: #8f1d22; } #clawd[data-costume=spider] .shoe .sl { stroke: #0d0d0d; } #clawd[data-costume=spider] .shoe .sk { stroke: #8f1d22; } #clawd[data-costume=spider] .shoe .so { fill: #1d3f9e; }
+#clawd[data-costume=spider] .emo .pup { display: none; } #clawd[data-costume=spider] .emo .ew { fill: #ffffff; stroke: #0d0d0d; stroke-width: 5; }
+#clawd[data-costume=thor] { --gv: #9aa4b2; --gl: #2b3446; --gs: #6f7a88; --gk: #e8edf3; }
+#clawd[data-costume=thor] .shoe .su { fill: #3b2a1e; stroke: #0d0d0d; } #clawd[data-costume=thor] .shoe .ss { fill: #2a1d14; } #clawd[data-costume=thor] .shoe .sl { stroke: #e0b84a; } #clawd[data-costume=thor] .shoe .sk { stroke: #2a1d14; } #clawd[data-costume=thor] .shoe .so { fill: #e0b84a; }
+#clawd[data-costume=thor] .emo .eL, #clawd[data-costume=thor] .emo .bL { translate: 15px 4px; } #clawd[data-costume=thor] .emo .eR, #clawd[data-costume=thor] .emo .bR { translate: -15px 4px; } #clawd[data-costume=thor] .emo .lidf { fill: #e2b98c; }
+#clawd[data-costume=thor] .emo .mo, #clawd[data-costume=thor] .emo .bk { transform-box: view-box; transform-origin: 80px 63px; scale: .75; translate: 0 -14px; }
+#clawd[data-costume=captain] { --gv: #c1272d; --gl: #5a0f12; --gs: #8f1d22; --gk: #f3d6d6; }
+#clawd[data-costume=captain] .shoe .su { fill: #c1272d; stroke: #0d0d0d; } #clawd[data-costume=captain] .shoe .ss { fill: #8f1d22; } #clawd[data-costume=captain] .shoe .sl { stroke: #ffffff; } #clawd[data-costume=captain] .shoe .sk { stroke: #8f1d22; } #clawd[data-costume=captain] .shoe .so { fill: #ffffff; }
+#clawd[data-costume=captain] .emo .eL, #clawd[data-costume=captain] .emo .bL { translate: 15px 4px; } #clawd[data-costume=captain] .emo .eR, #clawd[data-costume=captain] .emo .bR { translate: -15px 4px; } #clawd[data-costume=captain] .emo .lidf { fill: #e2b98c; }
+#clawd[data-costume=captain] .emo .mo, #clawd[data-costume=captain] .emo .bk { transform-box: view-box; transform-origin: 80px 63px; scale: .75; translate: 0 -14px; }
+#clawd[data-costume=iron] { --gv: #e0b030; --gl: #6b4f0a; --gs: #9a7312; --gk: #fff3b0; }
+#clawd[data-costume=iron] .shoe .su { fill: #e0b030; stroke: #0d0d0d; } #clawd[data-costume=iron] .shoe .ss { fill: #9a7312; } #clawd[data-costume=iron] .shoe .sl { stroke: #b3202a; } #clawd[data-costume=iron] .shoe .sk { stroke: #9a7312; } #clawd[data-costume=iron] .shoe .so { fill: #b3202a; }
+#clawd[data-costume=iron] .emo .pup { display: none; } #clawd[data-costume=iron] .emo .ew { fill: #eaf8ff; stroke: #7ee8ff; stroke-width: 3.5; }
+#clawd[data-costume=strange] { --gv: #5a3b1c; --gl: #2a1a0c; --gs: #3e2812; --gk: #e0b84a; }
+#clawd[data-costume=strange] .shoe .su { fill: #5a3b1c; stroke: #0d0d0d; } #clawd[data-costume=strange] .shoe .ss { fill: #3e2812; } #clawd[data-costume=strange] .shoe .sl { stroke: #e0b84a; } #clawd[data-costume=strange] .shoe .sk { stroke: #3e2812; } #clawd[data-costume=strange] .shoe .so { fill: #e0b84a; }
+#clawd[data-costume=strange] .emo .eL, #clawd[data-costume=strange] .emo .bL { translate: 15px 4px; } #clawd[data-costume=strange] .emo .eR, #clawd[data-costume=strange] .emo .bR { translate: -15px 4px; } #clawd[data-costume=strange] .emo .lidf { fill: #dcb48c; }
+#clawd[data-costume=strange] .emo .mo, #clawd[data-costume=strange] .emo .bk { transform-box: view-box; transform-origin: 80px 63px; scale: .75; translate: 0 -14px; }
+#clawd[data-costume=superman] { --gv: #1f5fd6; --gl: #0c2a66; --gs: #174aa8; --gk: #8fb4ff; }
+#clawd[data-costume=superman] .shoe .su { fill: #c1272d; stroke: #0d0d0d; } #clawd[data-costume=superman] .shoe .ss { fill: #8f1d22; } #clawd[data-costume=superman] .shoe .sl { stroke: #f1c40f; } #clawd[data-costume=superman] .shoe .sk { stroke: #8f1d22; } #clawd[data-costume=superman] .shoe .so { fill: #8f1d22; }
+#clawd[data-costume=superman] .emo .eL, #clawd[data-costume=superman] .emo .bL { translate: 15px 4px; } #clawd[data-costume=superman] .emo .eR, #clawd[data-costume=superman] .emo .bR { translate: -15px 4px; } #clawd[data-costume=superman] .emo .lidf { fill: #e4bb92; }
+#clawd[data-costume=superman] .emo .mo, #clawd[data-costume=superman] .emo .bk { transform-box: view-box; transform-origin: 80px 63px; scale: .75; translate: 0 -14px; }
+#clawd[data-costume=batman] { --gv: #343a49; --gl: #0d0d0d; --gs: #22262f; --gk: #5a6276; }
+#clawd[data-costume=batman] .shoe .su { fill: #3a4152; stroke: #0d0d0d; } #clawd[data-costume=batman] .shoe .ss { fill: #22262f; } #clawd[data-costume=batman] .shoe .sl { stroke: #f1c40f; } #clawd[data-costume=batman] .shoe .sk { stroke: #22262f; } #clawd[data-costume=batman] .shoe .so { fill: #15171c; }
+#clawd[data-costume=batman] .emo .pup { display: none; } #clawd[data-costume=batman] .emo .ew { fill: #ffffff; stroke: #0d0d0d; stroke-width: 4; }
+/* end emotes */

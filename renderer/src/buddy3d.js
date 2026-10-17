@@ -3,7 +3,7 @@
 // Contract: window.__buddy3d = { ok, update({ act, eyes, item, dir, color, color2 }) }
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { EMOTE_FACE } from './emoteface.js';
+import { EMOTE_FACE, EMOTE_THEME } from './emoteface.js';
 
 const host = document.getElementById('mascot');
 let renderer;
@@ -162,19 +162,26 @@ if (renderer) {
   { const [x, y] = P(DX0 + DW / 2, DY0 + DH / 2); decal.position.set(x, y, 0.002); }
   decal.visible = false; face.add(decal);
   const decals = new Map(); // emote id + lid colour -> texture
-  const paintFace = (ops, lid) => {
+  // th: the hero costume's EMOTE_THEME entry (lens = mask lenses without iris; face = eyes/brows/mouth moved onto the face)
+  const paintFace = (ops, lid, th) => {
     const cv = document.createElement('canvas'); cv.width = DW * DPX; cv.height = DH * DPX;
     const c = cv.getContext('2d');
+    const lens = th && th.lens, fc = th && th.face;
     for (const o of ops) {
+      if (lens && o.c === 'pup') continue;
       const m = o.m || [1, 0, 0, 1, 0, 0];
-      c.setTransform(DPX, 0, 0, DPX, -DX0 * DPX, -DY0 * DPX); c.transform(...m);
+      c.setTransform(DPX, 0, 0, DPX, -DX0 * DPX, -DY0 * DPX);
+      if (fc && o.sd === 'L') c.translate(fc, 4); else if (fc && o.sd === 'R') c.translate(-fc, 4);
+      else if (fc && o.sd === 'M') { c.translate(80, 49); c.scale(0.75, 0.75); c.translate(-80, -63); }
+      c.transform(...m);
       const p = new Path2D();
       if (o.k === 'p') p.addPath(new Path2D(o.d));
       else if (o.k === 'e') p.ellipse(o.g[0], o.g[1], o.g[2], o.g[3], 0, 0, Math.PI * 2);
       else p.roundRect(o.g[0], o.g[1], o.g[2], o.g[3], o.g[4]);
       c.globalAlpha = o.o == null ? 1 : o.o;
-      if (o.f) { c.fillStyle = o.f === 'LIDF' ? lid : o.f; c.fill(p); }
-      if (o.s) { c.strokeStyle = o.s; c.lineWidth = o.w; c.lineCap = o.lc || 'butt'; c.lineJoin = o.lj || 'miter'; c.setLineDash(o.da || []); c.stroke(p); }
+      const ew = lens && o.c === 'ew';
+      if (o.f) { c.fillStyle = ew ? lens[0] : o.f === 'LIDF' ? lid : o.f; c.fill(p); }
+      if (o.s) { c.strokeStyle = ew ? lens[1] : o.s; c.lineWidth = ew ? lens[2] : o.w; c.lineCap = o.lc || 'butt'; c.lineJoin = o.lj || 'miter'; c.setLineDash(o.da || []); c.stroke(p); }
     }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     return tex;
@@ -183,9 +190,10 @@ if (renderer) {
   const showDecal = (id) => {
     const ops = EMOTE_FACE[id];
     if (!ops) { decal.visible = false; return; }
+    const th = EMOTE_THEME[st.costume];
     lidCol.copy(bodyMat.color).multiplyScalar(0.88);
-    const lid = '#' + lidCol.getHexString(THREE.SRGBColorSpace), key = id + lid;
-    if (!decals.has(key)) { if (decals.size >= 6) { for (const t of decals.values()) t.dispose(); decals.clear(); } decals.set(key, paintFace(ops, lid)); }
+    const lid = (th && th.lid) || '#' + lidCol.getHexString(THREE.SRGBColorSpace), key = id + lid + st.costume;
+    if (!decals.has(key)) { if (decals.size >= 6) { for (const t of decals.values()) t.dispose(); decals.clear(); } decals.set(key, paintFace(ops, lid, th)); }
     if (decalMat.map !== decals.get(key)) { decalMat.map = decals.get(key); decalMat.needsUpdate = true; }
     decal.visible = true;
   };
@@ -229,11 +237,13 @@ if (renderer) {
   };
   const shoeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
   const soleMat = new THREE.MeshStandardMaterial({ color: 0xff8a3d, roughness: 0.6 });
+  const shoeShade = new THREE.MeshStandardMaterial({ color: 0xd9d3e6, roughness: 0.6 }), laceMat = soleMat.clone();
+  const PLAIN = { gv: '#ffffff', gs: '#d9d3e6', su: '#ffffff', ss: '#d9d3e6', sl: '#ff8a3d', so: '#ff8a3d' }; // no costume
   const shoes = legs.map((l) => {
     const s = new THREE.Group(); s.visible = false;
     const up = box(0.23, 0.13, 0.38, shoeMat, 0.05); up.position.set(0, -0.43, 0.05); s.add(up);
-    const toe = box(0.22, 0.08, 0.12, gloveShade, 0.035); toe.position.set(0, -0.44, 0.22); s.add(toe);
-    const lace = box(0.16, 0.025, 0.04, soleMat, 0.01); lace.position.set(0, -0.36, 0.12); lace.rotation.x = -0.4; s.add(lace);
+    const toe = box(0.22, 0.08, 0.12, shoeShade, 0.035); toe.position.set(0, -0.44, 0.22); s.add(toe);
+    const lace = box(0.16, 0.025, 0.04, laceMat, 0.01); lace.position.set(0, -0.36, 0.12); lace.rotation.x = -0.4; s.add(lace);
     const sole = box(0.25, 0.04, 0.42, soleMat, 0.015); sole.position.set(0, -0.5, 0.05); s.add(sole);
     l.add(s); return s;
   });
@@ -259,6 +269,9 @@ if (renderer) {
     for (const y of [-0.06, 0.07]) { const st2 = box(0.5, 0.035, 0.045, bm, 0.01); st2.position.y = y; cl.add(st2); } }
   const showEmote = (id) => {
     const on = !!id, gl = EMO_GLOVE[id] || [];
+    const th = EMOTE_THEME[st.costume] || PLAIN; // gloves and shoes in the hero costume's colours
+    gloveMat.color.set(th.gv); gloveMat.emissive.set(th.gv); gloveShade.color.set(th.gs);
+    shoeMat.color.set(th.su); shoeShade.color.set(th.ss); laceMat.color.set(th.sl); soleMat.color.set(th.so);
     if (on) showDecal(id); else decal.visible = false;
     for (const kd of GLOVES) { glovesR[kd].visible = on && gl[0] === kd; glovesL[kd].visible = on && gl[1] === kd; }
     for (const s of shoes) s.visible = on;
@@ -282,20 +295,24 @@ if (renderer) {
   // costume art decal: the same SVG art as the flat look, baked into a texture on the torso's front face
   const costDecal = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.14), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); costDecal.position.set(0, 0.57, D / 2 + 0.004); costDecal.visible = false; body.add(costDecal);
   let decalFor = '';
+  const costTex = { plain: null, emote: null }; // emote: without the costume's own eyes and smile (class cf), the emote brings its own
   function buildDecal(name) {
     decalFor = name;
     const art = window.COSTUME_ART && window.COSTUME_ART[name];
     if (!art) { costDecal.visible = false; return; }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 114" width="640" height="456"><defs>${window.COSTUME_DEFS}</defs><g clip-path="url(#bodyClip)">${art.under}${art.over}</g></svg>`;
-    const img = new Image();
-    img.onload = () => {
-      if (decalFor !== name) return;
-      const cv = document.createElement('canvas'); cv.width = 640; cv.height = 456; cv.getContext('2d').drawImage(img, 0, 0, 640, 456);
-      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-      if (costDecal.material.map) costDecal.material.map.dispose();
-      costDecal.material.map = tex; costDecal.material.needsUpdate = true; costDecal.visible = true; dirty = true; settle = 12;
-    };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    for (const kind of ['plain', 'emote']) {
+      const hide = kind === 'emote' ? '<style>.cf{display:none}</style>' : '';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 114" width="640" height="456">${hide}<defs>${window.COSTUME_DEFS}</defs><g clip-path="url(#bodyClip)">${art.under}${art.over}</g></svg>`;
+      const img = new Image();
+      img.onload = () => {
+        if (decalFor !== name) return;
+        const cv = document.createElement('canvas'); cv.width = 640; cv.height = 456; cv.getContext('2d').drawImage(img, 0, 0, 640, 456);
+        const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+        if (costTex[kind]) costTex[kind].dispose();
+        costTex[kind] = tex; costDecal.material.map = null; costDecal.visible = true; dirty = true; settle = 12; // frame() picks the texture
+      };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
   }
 
   // canoe for the aura-farming pose (Pacu Jalur boat)
@@ -510,7 +527,8 @@ if (renderer) {
     }
     const cs = COST[st.costume];
     cape.visible = !!(cs && cs.cape); ears.visible = st.costume === 'batman'; mask.visible = false;
-    hammer.visible = st.costume === 'thor'; shield.visible = st.costume === 'captain';
+    const emoting = a.startsWith('emote-'); // emotes bring their own gloves, so the hand props step aside
+    hammer.visible = st.costume === 'thor' && !emoting; shield.visible = st.costume === 'captain' && !emoting;
     web.visible = showWeb; ringL.visible = ringR.visible = showRings;
     if (showRings) { ringL.rotation.z = t * 2; ringR.rotation.z = -t * 2; }
     if (cs && cs.cape) cape.rotation.x = 0.12 + Math.sin(t * (st.costume === 'superman' ? 9 : 2.5)) * 0.1;
@@ -526,6 +544,8 @@ if (renderer) {
     const emo = a.startsWith('emote-') ? a.slice(6) : '';
     if (emo !== shownEmote) { shownEmote = emo; showEmote(emo); }
     if (emo) sun.visible = false;
+    const ct = (emo && costTex.emote) || costTex.plain;
+    if (costDecal.visible && ct && costDecal.material.map !== ct) { costDecal.material.map = ct; costDecal.material.needsUpdate = true; }
     for (const [n, g] of Object.entries(eyes)) g.visible = !emo && n === st.eyes && st.shades !== 'sunglasses' && !['spider', 'iron', 'batman'].includes(st.costume);
     const blink = (t % 3.4) > 3.25 ? 0.1 : 1;
     for (const e of openEyes.concat(wideEyes)) e.scale.y = blink;

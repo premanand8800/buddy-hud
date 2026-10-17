@@ -5,3 +5,4 @@ dist-dev/
 promo/*.mp4
 promo/out.mp4
 .DS_Store
+__pycache__/

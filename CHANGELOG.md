@@ -3,6 +3,7 @@
 ## 0.12.2
 
 - Fix: with a hero costume on, the costume art covered an emote's gloves, face and goggles in the flat looks. The emote now draws in front.
+- **Emotes match the hero costume.** With a costume on, the gloves and sneakers take the costume's colours (red web-slinger gloves, gold gauntlets, steel, leather...), masked heroes get expressive mask lenses instead of cartoon eyes, heroes that show a face get the emote's eyes, mouth and blush on that face, and the costume's own eyes, smile, boots and hand props step aside so nothing overlaps. Flat looks and 3D.
 - The 🎭 emote tray now opens beside the buddy as a compact icon grid (the name shows on hover) instead of above it, so the buddy stays in view; it has a ✕ to close it.
 - **Buddy HUD Dev** for trying changes before a release: `npm run dev:app` packages the current checkout as a separate app (its own name and settings, never self-updates; installed to Applications on macOS). Quit Buddy HUD before opening it, since both use the same hook port.
 - First release delivered through the new signing key: from 0.12.1, Settings → Updates → Check now downloads, verifies and installs it with **Restart to update** (macOS, Windows and Linux).

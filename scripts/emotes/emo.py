@@ -3,10 +3,12 @@
 import math, re
 
 INK = '#17120f'
-GV = 'fill="#fff" stroke="#8f88a3" stroke-width="2.5" stroke-linejoin="round"'
-GS = 'fill="#e6e1ee"'
-GC = 'fill="none" stroke="#b7b0c6" stroke-width="2" stroke-linecap="round"'
-ST = 'fill="none" stroke="#c4bdd2" stroke-width="1.6" stroke-linecap="round"'
+# glove paint: the gloves are drawn through <use>, which page CSS selectors do not reach, so a hero costume recolours
+# them through inherited custom properties (THEME below); the fallbacks are the plain white look
+GV = 'fill="#fff" stroke="#8f88a3" stroke-width="2.5" stroke-linejoin="round" style="fill:var(--gv,#fff);stroke:var(--gl,#8f88a3)"'
+GS = 'fill="#e6e1ee" style="fill:var(--gs,#e6e1ee)"'
+GC = 'fill="none" stroke="#b7b0c6" stroke-width="2" stroke-linecap="round" style="stroke:var(--gk,#b7b0c6)"'
+ST = 'fill="none" stroke="#c4bdd2" stroke-width="1.6" stroke-linecap="round" style="stroke:var(--gk,#c4bdd2)"'
 FD = f'fill="none" stroke="{INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"'
 
 def f1(v): return f'{v:.1f}'
@@ -23,7 +25,7 @@ DEFS = f'''<defs>
 <g id="gvIndex"><rect x="-1" y="-64" width="12" height="38" rx="6" {GV}/>{FINGER_SHADE(-1,-64,38)}<path d="M1 -58 Q5 -61 9 -58" {ST}/>{FIST}<rect x="-24" y="-32" width="12" height="20" rx="6" transform="rotate(-20 -18 -22)" {GV}/>{CUFF}</g>
 <g id="gvGun"><rect x="-1" y="-66" width="12" height="40" rx="6" {GV}/>{FINGER_SHADE(-1,-66,40)}{FIST}<rect x="-34" y="-34" width="22" height="11" rx="5.5" {GV}/><path d="M-30 -27 H-18" {ST}/>{CUFF}</g>
 <g id="gvPalm"><rect x="-16" y="-58" width="8" height="30" rx="4" {GV}/><rect x="-7" y="-64" width="8" height="36" rx="4" {GV}/><rect x="2" y="-62" width="8" height="34" rx="4" {GV}/><rect x="11" y="-54" width="7" height="26" rx="3.5" {GV}/><path d="M-14 -40 V-36 M-5 -46 V-42 M4 -45 V-41 M13 -38 V-35" {ST}/><rect x="-18" y="-38" width="37" height="34" rx="12" {GV}/><path d="M10 -36 Q19 -30 18 -16 Q17 -7 9 -5 Z" {GS}/>{PALM_BACK}<rect x="-30" y="-36" width="10" height="24" rx="5" transform="rotate(35 -25 -24)" {GV}/><path d="M-8 -14 Q1 -10 10 -15" {GC}/>{CUFF}</g>
-<g id="gvOk"><rect x="-1" y="-62" width="8" height="34" rx="4" {GV}/><rect x="8" y="-60" width="8" height="32" rx="4" {GV}/><rect x="16" y="-52" width="7" height="24" rx="3.5" {GV}/><path d="M1 -44 V-40 M10 -43 V-39 M18 -37 V-34" {ST}/><rect x="-18" y="-38" width="40" height="34" rx="12" {GV}/><path d="M13 -36 Q22 -30 21 -16 Q20 -7 12 -5 Z" {GS}/>{PALM_BACK}<circle cx="-13" cy="-40" r="10" fill="none" stroke="#8f88a3" stroke-width="12"/><circle cx="-13" cy="-40" r="10" fill="none" stroke="#fff" stroke-width="7"/><path d="M-21 -46 Q-13 -52 -5 -46" {ST}/>{CUFF}</g>
+<g id="gvOk"><rect x="-1" y="-62" width="8" height="34" rx="4" {GV}/><rect x="8" y="-60" width="8" height="32" rx="4" {GV}/><rect x="16" y="-52" width="7" height="24" rx="3.5" {GV}/><path d="M1 -44 V-40 M10 -43 V-39 M18 -37 V-34" {ST}/><rect x="-18" y="-38" width="40" height="34" rx="12" {GV}/><path d="M13 -36 Q22 -30 21 -16 Q20 -7 12 -5 Z" {GS}/>{PALM_BACK}<circle cx="-13" cy="-40" r="10" fill="none" stroke="#8f88a3" stroke-width="12" style="stroke:var(--gl,#8f88a3)"/><circle cx="-13" cy="-40" r="10" fill="none" stroke="#fff" stroke-width="7" style="stroke:var(--gv,#fff)"/><path d="M-21 -46 Q-13 -52 -5 -46" {ST}/>{CUFF}</g>
 <g id="gvPinch"><rect x="-24" y="-46" width="10" height="24" rx="5" transform="rotate(28 -19 -34)" {GV}/><rect x="-17" y="-34" width="34" height="30" rx="12" {GV}/><path d="M9 -32 Q17 -26 16 -14 Q15 -7 8 -5 Z" {GS}/><path d="M-15 -26 C-13 -48 -5 -62 1 -64 C9 -62 15 -48 15 -26 Z" {GV}/><path d="M7 -28 C9 -42 6 -54 2 -61 C10 -56 14 -44 14 -28 Z" {GS}/><path d="M-6 -28 C-5 -44 -2 -56 0 -62 M6 -28 C5 -44 3 -56 1 -62" {GC}/>{CUFF}</g>
 <g id="gvTowel"><path d="M-34 -10 Q-8 -22 26 -12 L30 18 Q4 26 -30 16 Z" fill="#f3efe6" stroke="#8f88a3" stroke-width="2.5" stroke-linejoin="round"/><path d="M-32 -2 Q-6 -12 27 -3 M-31 8 Q-4 -2 29 7" fill="none" stroke="#7cc8ff" stroke-width="3"/><path d="M-16 -14 L-12 20 M6 -14 L10 22" {GC}/><path d="M-30 16 l-2 6 M-22 19 l-1 6 M-14 21 l0 6 M-6 22 l1 6 M2 22 l1 6 M10 21 l2 6 M18 20 l2 6 M26 18 l3 6" stroke="#cfc8bd" stroke-width="1.6" stroke-linecap="round"/></g>
 <path id="note" d="M0 0 V-16 L10 -19 V-4 M0 0 a4 3 -20 1 1 -1 -1 M10 -4 a4 3 -20 1 1 -1 -1" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,7 +61,10 @@ def glove(ref, tf, cls='a1', pts=None, world=None):
     return f'<g transform="{tf}"><g class="{cls}">{a}<use href="#{ref}"/></g></g>'
 
 # ---------------- eyes: whites, iris, pupil, shine, lids, lashes ----------------
-def eye(cx, cy, side, kind='open', lid=0.0, tilt=0.0, look=(0, 0), rx=14, ry=17, iris=8, bags=False):
+def eye(cx, cy, side, **kw):
+    return f'<g class="e{"L" if side < 0 else "R"}">' + _eye(cx, cy, side, **kw) + '</g>'
+
+def _eye(cx, cy, side, kind='open', lid=0.0, tilt=0.0, look=(0, 0), rx=14, ry=17, iris=8, bags=False):
     """side: -1 left eye, +1 right eye. tilt > 0 = angry (lid lower at the inner corner), < 0 = sad."""
     out = []
     if kind == 'happy':
@@ -68,7 +73,7 @@ def eye(cx, cy, side, kind='open', lid=0.0, tilt=0.0, look=(0, 0), rx=14, ry=17,
         return f'<path d="M{cx-13} {cy} Q{cx} {cy+9} {cx+13} {cy}" fill="none" stroke="{INK}" stroke-width="5" stroke-linecap="round"/><path d="M{cx+side*13} {cy} l{side*5} 4 M{cx+side*8} {cy+5} l{side*3} 5" stroke="{INK}" stroke-width="2.6" stroke-linecap="round"/>'
     if kind == 'squint':
         return f'<path d="M{cx+side*12} {cy-12} L{cx-side*10} {cy} L{cx+side*12} {cy+12}" fill="none" stroke="{INK}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'
-    out.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#fff" stroke="{INK}" stroke-width="3"/>')
+    out.append(f'<ellipse class="ew" cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#fff" stroke="{INK}" stroke-width="3"/>')
     out.append(f'<path d="M{cx-rx+3} {f1(cy+ry*0.35)} Q{cx} {cy+ry+1} {cx+rx-3} {f1(cy+ry*0.35)}" fill="none" stroke="#d9d3e6" stroke-width="3"/>')
     lx, ly = look
     out.append(f'<g class="pup"><circle cx="{f1(cx+lx)}" cy="{f1(cy+ly)}" r="{iris}" fill="#4b2d8f"/><circle cx="{f1(cx+lx)}" cy="{f1(cy+ly)}" r="{iris*0.62:.1f}" fill="#0b0812"/>'
@@ -120,12 +125,14 @@ def brow(p0, p1, p2, w0=7.5, w1=3.0):
         t = i / 12; x, y, nx, ny = q(t); w = (w0 + (w1 - w0) * t) / 2
         top.append((x + nx*w, y + ny*w)); bot.append((x - nx*w, y - ny*w))
     pts = top + bot[::-1]
-    return '<path d="M' + ' L'.join(f'{f1(x)} {f1(y)}' for x, y in pts) + f'Z" fill="{INK}" stroke="{INK}" stroke-width="1.5" stroke-linejoin="round"/>'
+    return f'<path class="b{"L" if p0[0] < 80 else "R"}" d="M' + ' L'.join(f'{f1(x)} {f1(y)}' for x, y in pts) + f'Z" fill="{INK}" stroke="{INK}" stroke-width="1.5" stroke-linejoin="round"/>'
 
 # ---------------- face parts ----------------
 NOSE = ('<path d="M73 74 Q74 64 80 63 Q86 64 87 74 Q80 78 73 74Z" fill="rgba(20,8,40,.22)"/>'
         '<ellipse cx="78" cy="66.5" rx="2.6" ry="1.6" fill="#fff" opacity=".45"/><circle cx="76.5" cy="73" r="1.6" fill="rgba(20,8,40,.5)"/><circle cx="83.5" cy="73" r="1.6" fill="rgba(20,8,40,.5)"/>')
 def blush(lines=True):
+    return '<g class="bk">' + _blush(lines) + '</g>'
+def _blush(lines=True):
     s = '<ellipse cx="22" cy="80" rx="12" ry="6.5" fill="#ff8fb1" opacity=".55"/><ellipse cx="138" cy="80" rx="12" ry="6.5" fill="#ff8fb1" opacity=".55"/>'
     if lines:
         s += '<path d="M15 82 l4 -6 M21 82 l4 -6 M27 82 l4 -6 M131 82 l4 -6 M137 82 l4 -6 M143 82 l4 -6" stroke="#e8577f" stroke-width="1.8" stroke-linecap="round"/>'
@@ -222,6 +229,22 @@ E['scuba'] = (eyes(dict(look=(0, 0)), dict(look=(0, 0)))
               + '<path d="M70 92 Q78 96 84 92" fill="none" stroke="#17120f" stroke-width="3" stroke-linecap="round"/>' + blush(False) + BUBBLES
               + '<g class="duo">' + glove('gvPalm', 'translate(108 118) rotate(18) scale(.95)') + glove('gvPalm', 'translate(52 118) scale(-1 1) rotate(18) scale(.95)', 'a2') + '</g>')
 
+# group the nose and mouth (the run of plain shapes from NOSE on) so a costume that shows a face can move them up
+def _group_mouth(v):
+    import xml.etree.ElementTree as ET
+    i = v.find(NOSE)
+    if i < 0: return v
+    rest = ET.fromstring(f'<x>{v[i:]}</x>')
+    run = []
+    for c in rest:
+        if c.tag in ('path', 'rect', 'ellipse', 'circle') and not c.get('class'): run.append(c)
+        else: break
+    cut = len(''.join(ET.tostring(c, encoding='unicode') for c in run))
+    tail = ET.tostring(rest, encoding='unicode')[3:-4]
+    mouth, after = tail[:cut], tail[cut:]
+    return v[:i] + '<g class="mo">' + mouth + '</g>' + after
+for _k in list(E): E[_k] = _group_mouth(E[_k])
+
 GROUND = '<ellipse class="eground" cx="80" cy="166" rx="92" ry="8" fill="rgba(0,0,0,.35)"/>'
 LAYER = '<g class="emo"><g class="eshade">' + SHADE + '</g>' + ''.join(f'<g class="x x-{k}">{v}</g>' for k, v in E.items()) + '</g>'
 LAYERS = E
@@ -230,12 +253,41 @@ def shoes(xs):
     out = []
     for x in xs:
         c = x + 8
-        out.append(f'<g class="shoe"><path d="M{c-12} 162 Q{c-13} 150 {c-4} 149 L{c+5} 149 Q{c+15} 151 {c+16} 162 Z" fill="#fff" stroke="#8f88a3" stroke-width="2.4" stroke-linejoin="round"/>'
-                   f'<path d="M{c+6} 150 Q{c+14} 152 {c+15} 160 L{c+8} 160 Q{c+8} 154 {c+6} 150Z" fill="#e6e1ee"/>'
-                   f'<path d="M{c-8} 158 Q{c+1} 152 {c+12} 158" fill="none" stroke="#ff8a3d" stroke-width="2.6" stroke-linecap="round"/>'
-                   f'<path d="M{c-4} 151 l3 3 M{c} 150 l3 3 M{c+4} 150 l3 3" stroke="#8f88a3" stroke-width="1.5" stroke-linecap="round"/>'
-                   f'<rect x="{c-14}" y="160" width="31" height="5" rx="2.5" fill="#ff8a3d" stroke="#17120f" stroke-width="1.6"/></g>')
+        out.append(f'<g class="shoe"><path class="su" d="M{c-12} 162 Q{c-13} 150 {c-4} 149 L{c+5} 149 Q{c+15} 151 {c+16} 162 Z" fill="#fff" stroke="#8f88a3" stroke-width="2.4" stroke-linejoin="round"/>'
+                   f'<path class="ss" d="M{c+6} 150 Q{c+14} 152 {c+15} 160 L{c+8} 160 Q{c+8} 154 {c+6} 150Z" fill="#e6e1ee"/>'
+                   f'<path class="sl" d="M{c-8} 158 Q{c+1} 152 {c+12} 158" fill="none" stroke="#ff8a3d" stroke-width="2.6" stroke-linecap="round"/>'
+                   f'<path class="sk" d="M{c-4} 151 l3 3 M{c} 150 l3 3 M{c+4} 150 l3 3" stroke="#8f88a3" stroke-width="1.5" stroke-linecap="round"/>'
+                   f'<rect class="so" x="{c-14}" y="160" width="31" height="5" rx="2.5" fill="#ff8a3d" stroke="#17120f" stroke-width="1.6"/></g>')
     return ''.join(out)
+
+# Hero costumes: while emoting, gloves and shoes take the costume's colours, and masked heroes get mask lenses
+# (no iris) instead of cartoon eyes; on costumes that show a face, the eyes and brows move in by `face` and the lids take
+# the skin tone `lid`. gv/gl/gs/gk: glove fill/outline/shade/creases; su/ss/sl/so: shoe upper/shade/lace/sole.
+THEME = {
+    'spider':   dict(gv='#c1272d', gl='#0d0d0d', gs='#8f1d22', gk='#0d0d0d', su='#c1272d', ss='#8f1d22', sl='#0d0d0d', so='#1d3f9e', lens=('#ffffff', '#0d0d0d', 5)),
+    'thor':     dict(gv='#9aa4b2', gl='#2b3446', gs='#6f7a88', gk='#e8edf3', su='#3b2a1e', ss='#2a1d14', sl='#e0b84a', so='#e0b84a', lens=None, face=15, lid='#e2b98c'),
+    'captain':  dict(gv='#c1272d', gl='#5a0f12', gs='#8f1d22', gk='#f3d6d6', su='#c1272d', ss='#8f1d22', sl='#ffffff', so='#ffffff', lens=None, face=15, lid='#e2b98c'),
+    'iron':     dict(gv='#e0b030', gl='#6b4f0a', gs='#9a7312', gk='#fff3b0', su='#e0b030', ss='#9a7312', sl='#b3202a', so='#b3202a', lens=('#eaf8ff', '#7ee8ff', 3.5)),
+    'strange':  dict(gv='#5a3b1c', gl='#2a1a0c', gs='#3e2812', gk='#e0b84a', su='#5a3b1c', ss='#3e2812', sl='#e0b84a', so='#e0b84a', lens=None, face=15, lid='#dcb48c'),
+    'superman': dict(gv='#1f5fd6', gl='#0c2a66', gs='#174aa8', gk='#8fb4ff', su='#c1272d', ss='#8f1d22', sl='#f1c40f', so='#8f1d22', lens=None, face=15, lid='#e4bb92'),
+    'batman':   dict(gv='#343a49', gl='#0d0d0d', gs='#22262f', gk='#5a6276', su='#3a4152', ss='#22262f', sl='#f1c40f', so='#15171c', lens=('#ffffff', '#0d0d0d', 4)),
+}
+def theme_css(R):
+    out = [f'/* hero costume while emoting: hide the costume eyes, smile and boots (the emote brings its own) */',
+           f'{R}[data-act^=emote] .cos .cf, {R}[data-act^=emote] .cosu .cf, {R}[data-act^=emote] .cos .cb {{ display: none; }}']
+    for k, t in THEME.items():
+        C = f'{R}[data-costume={k}]'
+        out.append(f'{C} {{ --gv: {t["gv"]}; --gl: {t["gl"]}; --gs: {t["gs"]}; --gk: {t["gk"]}; }}')
+        out.append(f'{C} .shoe .su {{ fill: {t["su"]}; stroke: #0d0d0d; }} {C} .shoe .ss {{ fill: {t["ss"]}; }} {C} .shoe .sl {{ stroke: {t["sl"]}; }} '
+                   f'{C} .shoe .sk {{ stroke: {t["ss"]}; }} {C} .shoe .so {{ fill: {t["so"]}; }}')
+        if t['lens']:
+            f, st, w = t['lens']
+            out.append(f'{C} .emo .pup {{ display: none; }} {C} .emo .ew {{ fill: {f}; stroke: {st}; stroke-width: {w}; }}')
+        if t.get('face'):  # eyes and brows move in from the helmet's edge onto the face, lids in skin tone
+            d = t['face']
+            out.append(f'{C} .emo .eL, {C} .emo .bL {{ translate: {d}px 4px; }} {C} .emo .eR, {C} .emo .bR {{ translate: -{d}px 4px; }} {C} .emo .lidf {{ fill: {t["lid"]}; }}')
+            out.append(f'{C} .emo .mo, {C} .emo .bk {{ transform-box: view-box; transform-origin: 80px 63px; scale: .75; translate: 0 -14px; }}')
+    return '\n'.join(out) + '\n'
 
 def css(R, armo='color-mix(in srgb, var(--body) 62%, #000)', armi='var(--body)', lidf='color-mix(in srgb, var(--body) 88%, #000)'):
     show = ',\n'.join(f'{R}[data-act=emote-{k}] .x-{k}' for k in E)
