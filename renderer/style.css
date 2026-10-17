@@ -423,3 +423,121 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 #updbar > .dim { color: var(--dim); font-size: 12px; }
 #updbar .notes { color: var(--dim); font-size: 12px; max-height: 70px; overflow-y: auto; white-space: pre-wrap; }
 #updbar .btnRow { display: flex; gap: 8px; } #updbar .primary { background: var(--green); border-color: var(--green); color: #0c0a09; font-weight: 700; }
+
+/* ======================= hero costumes + stunts (original look-alikes) ======================= */
+#clawd .cape, #clawd .cos > g, #stunt > g, #clawd .hammer, #clawd .shield { display: none; }
+#clawd[data-costume=spider] .c-spider, #clawd[data-costume=thor] .c-thor, #clawd[data-costume=captain] .c-captain, #clawd[data-costume=iron] .c-iron,
+#clawd[data-costume=strange] .c-strange, #clawd[data-costume=superman] .c-superman, #clawd[data-costume=batman] .c-batman { display: block; }
+#clawd[data-costume=thor] .cape, #clawd[data-costume=strange] .cape, #clawd[data-costume=superman] .cape, #clawd[data-costume=batman] .cape { display: block; }
+#clawd[data-costume=thor] .hammer { display: block; } #clawd[data-costume=captain] .shield { display: block; }
+#clawd[data-costume=spider] .eyes, #clawd[data-costume=iron] .eyes, #clawd[data-costume=batman] .eyes { opacity: 0; }
+
+/* suit colours: the costume overrides the model colour */
+#clawd[data-costume=spider]   { --body: #c1272d; --legs: #1d3f9e; --hands: #c1272d; }
+#clawd[data-costume=thor]     { --body: #4a566e; --legs: #3b4256; --hands: #8d96a3; }
+#clawd[data-costume=captain]  { --body: #234aa8; --legs: #234aa8; --hands: #c1272d; }
+#clawd[data-costume=iron]     { --body: #b3202a; --legs: #b3202a; --hands: #e0b030; }
+#clawd[data-costume=strange]  { --body: #2c4f9e; --legs: #243f80; --hands: #e8c9a0; }
+#clawd[data-costume=superman] { --body: #1f5fd6; --legs: #1f5fd6; --hands: #1f5fd6; }
+#clawd[data-costume=batman]   { --body: #2a2d34; --legs: #20232a; --hands: #20232a; }
+#clawd[data-costume] .leg rect { fill: var(--legs); }
+#clawd[data-costume] .hand rect { fill: var(--hands) !important; }
+#clawd[data-costume] .cape path { fill: var(--cape, #c1272d); }
+#clawd[data-costume=thor] { --cape: #b3202a; } #clawd[data-costume=strange] { --cape: #b3202a; } #clawd[data-costume=superman] { --cape: #c1272d; } #clawd[data-costume=batman] { --cape: #15171c; }
+.c-spider .webl path { fill: none; stroke: #121212; stroke-width: 1.5; opacity: .5; }
+.c-spider .lens { fill: #fff; stroke: #121212; stroke-width: 3.5; }
+.c-spider .spd circle { fill: #121212; } .c-spider .spd path { fill: none; stroke: #121212; stroke-width: 2.4; }
+.c-thor .wing { fill: #cfd6e0; stroke: #8d96a3; stroke-width: 2; } .c-thor .disc { fill: #cfd6e0; stroke: #6f7886; stroke-width: 2; } .c-thor .belt { fill: #3a2a1c; }
+.c-captain .star { fill: #fff; } .c-captain .red { fill: #c1272d; } .c-captain .whiteb { fill: #fff; }
+.c-iron .plate { fill: #e0b030; stroke: #8a6a10; stroke-width: 3; } .c-iron .slit { fill: #fff; filter: none; animation: ironEyes 2s ease-in-out infinite; } .c-iron .goldb { fill: #e0b030; }
+.c-iron .arcring { fill: none; stroke: #bff4ff; stroke-width: 3; } .c-iron .arccore { fill: #7ee8ff; animation: corePulse 1.6s ease-in-out infinite; }
+@keyframes ironEyes { 50% { opacity: .55; } } @keyframes corePulse { 50% { opacity: .5; r: 5; } }
+.c-strange .collar { fill: #b3202a; stroke: #7a1019; stroke-width: 2; } .c-strange .grey { fill: #d9d9d9; } .c-strange .belt { fill: #7a4a1c; }
+.c-strange .amulet circle:first-child { fill: #3fa34d; stroke: #d6b24a; stroke-width: 3; } .c-strange .amulet ellipse { fill: #0c2b10; } .c-strange .amulet .pup { fill: #9dff9d; }
+.c-superman .emb { fill: #c1272d; stroke: #f1c40f; stroke-width: 3; } .c-superman .swave { fill: none; stroke: #f1c40f; stroke-width: 4; stroke-linecap: round; } .c-superman .trunk { fill: #c1272d; } .c-superman .goldb { fill: #f1c40f; } .c-superman .curl { fill: #111; }
+.c-batman .ear { fill: #20232a; } .c-batman .blens { fill: #fff; } .c-batman .emblem { fill: #f1c40f; stroke: #111; stroke-width: 3; } .c-batman .bat { fill: #111; } .c-batman .goldb { fill: #f1c40f; }
+#clawd .hammer .hh { fill: #7a4a1c; } #clawd .hammer .hd { fill: #8d96a3; stroke: #4a5160; stroke-width: 3; } #clawd .hammer .hs { fill: #b9c1cc; }
+.s1 { fill: #c1272d; } .s2 { fill: #fff; } .s3 { fill: #234aa8; } .sstar { fill: #fff; }
+
+/* the stunts, played while Claude is idle (act "hero") */
+#clawd[data-act=hero][data-costume=spider] .st-spider, #clawd[data-act=hero][data-costume=thor] .st-thor, #clawd[data-act=hero][data-costume=captain] .st-captain,
+#clawd[data-act=hero][data-costume=iron] .st-iron, #clawd[data-act=hero][data-costume=strange] .st-strange, #clawd[data-act=hero][data-costume=superman] .st-superman,
+#clawd[data-act=hero][data-costume=batman] .st-batman { display: block; }
+.webline { fill: none; stroke: #f4f4f4; stroke-width: 2.4; stroke-linecap: round; opacity: .9; } .webline.w2 { display: none; }
+
+/* spider: swings from a web, pointing at the ceiling */
+#clawd[data-act=hero][data-costume=spider] .rig { transform-box: view-box; transform-origin: 80px -56px; animation: webSwing 2.8s ease-in-out infinite; }
+@keyframes webSwing { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
+#clawd[data-act=hero][data-costume=spider] #handR { transform: translate(-6px, -66px) rotate(-8deg); }
+#clawd[data-act=hero][data-costume=spider] #handL { transform: translate(0, -6px) rotate(10deg); }
+#clawd[data-act=hero][data-costume=spider] .leg { animation: dangle 2.8s ease-in-out infinite alternate; }
+@keyframes dangle { from { translate: -3px 0; } to { translate: 3px 0; } }
+
+/* thor: storm cloud, lightning, hammer raised */
+.st-thor .cloud ellipse { fill: #323a4d; }
+.st-thor .bolt { fill: none; stroke: #fff6a8; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; opacity: 0; filter: drop-shadow(0 0 6px #ffe35a); animation: boltFlash 2.4s infinite; }
+.st-thor .bolt.b2 { animation-delay: .8s; } .st-thor .bolt.b3 { animation-delay: 1.6s; }
+@keyframes boltFlash { 0%, 84%, 100% { opacity: 0; } 86%, 92% { opacity: 1; } 89% { opacity: .15; } }
+.st-thor .rain path { stroke: #9fc4ff; stroke-width: 2; stroke-linecap: round; fill: none; animation: rainFall .6s linear infinite; }
+@keyframes rainFall { from { translate: 0 -10px; opacity: 0; } 30% { opacity: .9; } to { translate: -6px 80px; opacity: 0; } }
+#clawd[data-act=hero][data-costume=thor] #handR { transform: translate(-10px, -64px) rotate(-16deg); animation: hammerRaise 2.4s ease-in-out infinite; }
+@keyframes hammerRaise { 0%, 82%, 100% { translate: 0 0; } 90% { translate: 0 -6px; } }
+#clawd[data-act=hero][data-costume=thor] .hammer .hd { animation: hammerGlow 2.4s infinite; }
+@keyframes hammerGlow { 0%, 82%, 100% { fill: #8d96a3; } 88%, 94% { fill: #fff6a8; } }
+
+/* captain: throws the shield and catches it */
+#clawd[data-act=hero][data-costume=captain] .shield { animation: shieldHold 4s infinite; }
+@keyframes shieldHold { 0%, 12% { opacity: 1; } 14%, 86% { opacity: 0; } 88%, 100% { opacity: 1; } }
+.st-captain .fly { animation: shieldFly 4s linear infinite; opacity: 0; }
+@keyframes shieldFly {
+  0%, 12% { opacity: 0; transform: translate(-14px, 58px) rotate(0); } 14% { opacity: 1; transform: translate(-14px, 58px) rotate(0); }
+  42% { transform: translate(230px, 10px) rotate(900deg); } 52% { transform: translate(230px, 30px) rotate(1080deg); }
+  84% { opacity: 1; transform: translate(-14px, 58px) rotate(2000deg); } 88%, 100% { opacity: 0; transform: translate(-14px, 58px) rotate(2000deg); } }
+#clawd[data-act=hero][data-costume=captain] #handL { transform: translate(-8px, -4px) rotate(30deg); }
+#clawd[data-act=hero][data-costume=captain] .rig { animation: heroLean 4s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes heroLean { 0%, 12% { transform: rotate(0); } 24% { transform: rotate(7deg); } 40%, 100% { transform: rotate(0); } }
+
+/* iron: hovers on jets, fires a repulsor */
+.st-iron .j1 { fill: #ffb347; animation: jet .18s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+.st-iron .j1:nth-child(2n) { animation-delay: .09s; }
+@keyframes jet { from { transform: scaleY(.7); fill: #ffb347; } to { transform: scaleY(1.25); fill: #7ee8ff; } }
+.st-iron .beam { fill: #aef3ff; opacity: 0; transform-box: fill-box; transform-origin: 0 50%; filter: drop-shadow(0 0 8px #7ee8ff); animation: beamShot 3s infinite; }
+@keyframes beamShot { 0%, 56% { opacity: 0; transform: scaleX(0); } 60% { opacity: 1; transform: scaleX(1); } 72% { opacity: 1; transform: scaleX(1); } 76%, 100% { opacity: 0; transform: scaleX(1); } }
+.st-iron .muzzle { fill: #7ee8ff; opacity: 0; animation: muzzle 3s infinite; }
+@keyframes muzzle { 0%, 50% { opacity: .1; } 58%, 74% { opacity: .95; } 80%, 100% { opacity: .1; } }
+#clawd[data-act=hero][data-costume=iron] .rig { animation: hoverIron 2.2s ease-in-out infinite; }
+@keyframes hoverIron { 0%, 100% { translate: 0 -10px; } 50% { translate: 0 -18px; } }
+#clawd[data-act=hero][data-costume=iron] #handR { transform: translate(14px, -4px) rotate(-90deg); }
+#clawd[data-act=hero][data-costume=iron] #handL { transform: translate(-6px, 10px); }
+
+/* strange: spins glowing mandalas */
+.st-strange .mandala circle, .st-strange .mandala path { fill: none; stroke: #ffb347; stroke-width: 2.4; stroke-dasharray: 6 5; filter: drop-shadow(0 0 5px #ff8c1a); }
+.st-strange .mandala { transform-box: fill-box; transform-origin: center; animation: spinSlow 4s linear infinite; }
+.st-strange .m2 { animation-direction: reverse; }
+@keyframes spinSlow { to { transform: rotate(360deg); } }
+.st-strange .spark { fill: #ffd27a; animation: sparkle 1.4s ease-in-out infinite; } .st-strange .sp2 { animation-delay: .5s; } .st-strange .sp3 { animation-delay: 1s; }
+@keyframes sparkle { 0%, 100% { opacity: 0; translate: 0 6px; } 50% { opacity: 1; translate: 0 -10px; } }
+#clawd[data-act=hero][data-costume=strange] #handL { transform: translate(-4px, -8px); } #clawd[data-act=hero][data-costume=strange] #handR { transform: translate(4px, -8px); }
+
+/* superman: flies */
+.st-superman .sline { fill: none; stroke: rgba(255,255,255,.85); stroke-width: 3; stroke-linecap: round; animation: streak .45s linear infinite; }
+@keyframes streak { from { translate: 60px 0; opacity: 0; } 30% { opacity: 1; } to { translate: -40px 0; opacity: 0; } }
+.st-superman .puffs ellipse { fill: rgba(255,255,255,.7); animation: puffs 2.4s linear infinite; } .st-superman .puffs ellipse:nth-child(2) { animation-delay: 1.2s; }
+@keyframes puffs { from { translate: 80px 0; } to { translate: -120px 0; } }
+#clawd[data-act=hero][data-costume=superman] .rig { transform-box: view-box; transform-origin: 80px 90px; animation: flyBob 2.4s ease-in-out infinite; }
+@keyframes flyBob { 0%, 100% { transform: rotate(-26deg) translateY(-6px); } 50% { transform: rotate(-20deg) translateY(-18px); } }
+#clawd[data-act=hero][data-costume=superman] #handR { transform: translate(14px, -40px) rotate(-70deg); }
+#clawd[data-act=hero][data-costume=superman] .cape path { animation: capeFlutter .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes capeFlutter { from { transform: skewX(-6deg) scaleY(1); } to { transform: skewX(8deg) scaleY(1.08); } }
+
+/* batman: bat-signal + grapple, cape billows */
+.st-batman .cone { fill: rgba(255,248,200,.14); animation: signal 3s ease-in-out infinite; }
+@keyframes signal { 50% { fill: rgba(255,248,200,.26); } }
+.st-batman .moon circle { fill: #fff6c8; filter: drop-shadow(0 0 10px #fff6c8); } .st-batman .batsil { fill: #111; }
+.st-batman .grapple { fill: none; stroke: #bfc5cf; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 8 5; opacity: 0; animation: grapple 3.2s infinite; }
+@keyframes grapple { 0%, 60% { opacity: 0; } 64%, 80% { opacity: 1; } 84%, 100% { opacity: 0; } }
+#clawd[data-act=hero][data-costume=batman] .cape path { animation: capeBillow 1.8s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes capeBillow { from { transform: scaleX(1) skewX(-3deg); } to { transform: scaleX(1.08) skewX(4deg); } }
+#clawd[data-act=hero][data-costume=batman] #handR { animation: grappleArm 3.2s infinite; }
+@keyframes grappleArm { 0%, 58% { transform: translate(0, 0); } 64%, 80% { transform: translate(10px, -34px) rotate(-40deg); } 86%, 100% { transform: translate(0, 0); } }
+#clawd[data-act=hero] #item { opacity: 0 !important; }

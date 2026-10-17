@@ -124,6 +124,7 @@ $('optReply').onchange = (e) => hud.send('set', { replyMode: e.target.checked })
 $('optScale').onchange = (e) => hud.send('set', { scale: +e.target.value });
 $('optAlways').onchange = (e) => hud.send('set', { alwaysShow: e.target.checked });
 $('optWalk').onchange = (e) => hud.send('set', { walk: e.target.checked });
+$('optCostume').onchange = (e) => hud.send('set', { costume: e.target.value });
 $('optShades').onchange = (e) => hud.send('set', { shades: e.target.value });
 $('optCoffee').onchange = (e) => hud.send('set', { coffee: e.target.checked });
 $('optThink').onchange = (e) => hud.send('set', { thinkPose: e.target.value });
@@ -205,7 +206,10 @@ function render() {
   const perms = state.perms;
   let a = actFor(s, perms);
   const farm = ((state.settings && state.settings.aura) === 'max') && ['idle'].includes(a.act) && !(pet.phase === 'walk' || pet.phase === 'run');
-  if (farm) a = { act: 'farm', eyes: 'open', item: '🌊', item2: '', look: '' };
+  const costume = (state.settings && state.settings.costume) || 'none';
+  const hero = costume !== 'none' && ['idle', 'farm'].includes(a.act) && !(pet.phase === 'walk' || pet.phase === 'run');
+  if (hero) a = { act: 'hero', eyes: 'open', item: '', item2: '', look: '' };
+  else if (farm) a = { act: 'farm', eyes: 'open', item: '🌊', item2: '', look: '' };
   document.body.dataset.act = a.act;
 
   // theme follows the model (picked model shows immediately, real model confirms later)
@@ -231,11 +235,13 @@ function render() {
   svg.style.setProperty('--dir', String(pet.dir || 1));
   const st0 = state.settings || {};
   svg.dataset.skin = st0.skin || 'bot';
+  svg.dataset.costume = ((state.settings && state.settings.costume) || 'none') === 'none' ? '' : state.settings.costume;
+  if (!svg.dataset.costume) svg.removeAttribute('data-costume');
   svg.dataset.shades = farm ? 'sunglasses' : (st0.shades || 'none'); svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
   document.body.dataset.aura = st0.aura || 'off';
   svg.dataset.act = a.act; svg.dataset.eyes = a.eyes; svg.dataset.look = a.look;
   $('item').textContent = a.item; $('item2').textContent = a.item2;
-  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch' });
+  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch', costume: st0.costume || 'none' });
 
   // context pill
   const pct = s && s.ctx.max ? Math.min(100, (s.ctx.used / s.ctx.max) * 100) : 0;
@@ -297,6 +303,7 @@ function render() {
     $('optAlways').checked = state.settings.alwaysShow !== false;
     setHtml($('lastmsg'), s && s.lastMsg ? `<div class="fh">💬 Claude’s last message</div><div class="say">${md(s.lastMsg)}</div>` : '');
     $('ctxNote').textContent = s ? `${fmt(s.ctx.max)} window for ${s.project}. ${s.ctx.why || ''}` : 'Detected automatically from the model Claude is using.';
+    $('optCostume').value = st0.costume || 'none';
     $('optShades').value = st0.shades || 'none'; $('optCoffee').checked = !!st0.coffee; $('optThink').value = st0.thinkPose || 'scratch'; $('optAura').value = st0.aura || 'off';
     const hp = state.helper || {};
     $('helperNote').textContent = !hp.supported ? 'Not available on Windows yet.' : hp.installed ? `Installed. Start Claude Code with ${hp.path} (or press "Copy alias", paste it in your shell profile, and keep typing \`claude\`). Sessions started that way can receive your chat messages even while idle.` : 'Lets you chat from the buddy with an idle Claude Code session on macOS and Linux, with no tmux. One click installs a tiny launcher you start Claude with.';
