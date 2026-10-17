@@ -2,6 +2,7 @@ const { execFile } = require('child_process');
 const { app, BrowserWindow, ipcMain, screen, Notification, Menu, Tray, nativeImage, dialog, shell } = require('electron');
 const crypto = require('crypto');
 const usageLib = require('./lib/usage');
+const chatLib = require('./lib/chat');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -57,6 +58,7 @@ function dailyTotals() {
   for (const v of Object.values(daily.ids)) { t.in += v.in; t.out += v.out; t.cr += v.cr; t.cw += v.cw; if (v.cost === null) t.partial = true; else t.cost += v.cost; }
   return t;
 }
+let selectedId = null;
 let eventCount = 0, lastEventAt = 0, selfTestSeen = 0, selfTest = null;
 let win, hideTimer, seq = 0, pinned = false, userHidden = false, hooksCache = { t: 0, v: false };
 
@@ -262,7 +264,7 @@ function handleEvent(ev) {
   if (ev.session_id === '__selftest') { selfTestSeen = Date.now(); return null; }
   const id = ev.session_id || 'unknown';
   const s = getSession(id, ev);
-  s.stuckNotified = false;
+  s.stuckNotified = false; s.noHooks = false;
   const name = ev.hook_event_name;
   let extra = null;
 
@@ -327,6 +329,7 @@ function handleEvent(ev) {
       pushFeed(s, { emoji: '🤖', text: 'subagent finished', kind: 'info' });
       break;
     case 'SessionEnd':
+      try { dismissed.set(id, fs.statSync(s.transcript).mtimeMs); } catch { dismissed.set(id, Date.now()); } // do not resurrect an ended session from its transcript
       queued.delete(id);
       for (const [pid, p] of pendingPerms) if (p.sessionId === id) { try { p.res.end('{}'); } catch {} pendingPerms.delete(pid); }
       releaseStop(id);
@@ -391,6 +394,7 @@ function alertUser(kind, title, body, sessionId) {
 const server = http.createServer((req, res) => {
   // browsers always send Origin on cross-site requests; hooks (curl) never do
   if (req.headers.origin) { res.statusCode = 403; return res.end('{}'); }
+  if (TEST && req.method === 'POST' && req.url.startsWith('/__select/')) { selectedId = decodeURIComponent(req.url.slice(10)); res.setHeader('Content-Type', 'application/json'); return res.end('{}'); }
   if (TEST && req.method === 'GET' && req.url === '/__state') { res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify(snapshot())); }
   const chunks = []; let got = 0;
   req.on('data', (d) => { got += d.length; if (got > 5e6) { res.statusCode = 413; res.end('{}'); req.destroy(); } else chunks.push(d); });
@@ -506,8 +510,9 @@ function snapshot() {
   return {
     ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
     sessions: [...sessions.values()].sort((a, b) => b.updated - a.updated).map((s) => ({
-      ...s, _usageState: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!s.tmux, queued: (queued.get(s.id) || []).length,
+      ...s, _usageState: undefined, _chatState: undefined, _usage: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!s.tmux, queued: (queued.get(s.id) || []).length,
     })),
+    chat: (() => { const s = sessions.get(selectedId); if (!s) return null; const msgs = chatMessages(s).slice(-60); const lastUser = [...msgs].reverse().find((x) => x.role === 'user'); const now = Date.now(); s.pending = (s.pending || []).filter((p) => now - p.t < 15 * 60 * 1000 && !msgs.some((x) => x.role === 'user' && x.ts >= p.t - 5000 && x.text.includes(p.text.slice(0, 60)))); return { id: s.id, msgs, pending: s.pending }; })(),
     perms: [...pendingPerms.entries()].map(([id, p]) => ({ id, sessionId: p.sessionId, tool: p.tool, emoji: p.emoji, summary: p.summary, diff: p.diff, t: p.t })),
   };
 }
@@ -600,19 +605,22 @@ function decidePerm(id, behavior) {
   emit();
 }
 function sendReply(sessionId, text) {
+  const ps = sessions.get(sessionId);
+  const note = (mode) => { if (ps) { (ps.pending = ps.pending || []).push({ text, t: Date.now(), mode }); } };
   const res = stopHolds.get(sessionId);
   if (res) {
     stopHolds.delete(sessionId);
     res.end(JSON.stringify({ decision: 'block', reason: `The user replied via the Buddy HUD desktop overlay:\n${text}` }));
+    note('delivered');
     const s = sessions.get(sessionId);
     if (s) { s.status = 'thinking'; pushFeed(s, { emoji: '📨', text: clip(text, 120), kind: 'prompt' }); }
   } else if (sessions.get(sessionId) && sessions.get(sessionId).tmux && ['done', 'idle'].includes(sessions.get(sessionId).status)) {
     // Claude idle at its prompt inside tmux: type the reply straight into the pane
     const s = sessions.get(sessionId);
     typeIntoPane(s, text, (ok) => {
-      if (ok) { s.status = 'thinking'; pushFeed(s, { emoji: '📨', text: clip(text, 120), kind: 'prompt' }); }
+      if (ok) { note('delivered'); s.status = 'thinking'; pushFeed(s, { emoji: '📨', text: clip(text, 120), kind: 'prompt' }); }
       else {
-        const q = queued.get(sessionId) || []; q.push(text); queued.set(sessionId, q);
+        const q = queued.get(sessionId) || []; q.push(text); queued.set(sessionId, q); note('queued');
         pushFeed(s, { emoji: '📬', text: 'tmux refused the text, queued instead: ' + clip(text, 80), kind: 'prompt' });
       }
       emit();
@@ -621,6 +629,7 @@ function sendReply(sessionId, text) {
     const q = queued.get(sessionId) || [];
     q.push(text);
     queued.set(sessionId, q);
+    note('queued');
     const s = sessions.get(sessionId);
     if (s) pushFeed(s, { emoji: '📬', text: (['done', 'idle', 'waiting'].includes(s.status) ? 'NOT delivered yet (Claude is idle) — it arrives when you start the next turn: ' : 'queued for Claude’s next step: ') + clip(text, 100), kind: 'prompt' });
   }
@@ -716,6 +725,8 @@ ipcMain.on('phone', (_e, { enabled, regenerate }) => {
 
 ipcMain.on('release', (_e, sessionId) => { releaseStop(sessionId); emit(); });
 ipcMain.on('fit', (_e, { w, h }) => fit(w, h));
+ipcMain.on('select', (_e, id) => { if (id !== selectedId) { selectedId = id; chatSig = ''; emit(); } });
+ipcMain.on('dismiss', (_e, id) => { const s = sessions.get(id); if (!s) return; try { dismissed.set(id, fs.statSync(s.transcript).mtimeMs); } catch { dismissed.set(id, Date.now()); } sessions.delete(id); queued.delete(id); emit(); });
 ipcMain.on('seen', () => { lastSeenAt = Date.now(); });
 ipcMain.on('selfTest', () => runSelfTest());
 ipcMain.on('set', (_e, patch) => {
@@ -760,6 +771,68 @@ setInterval(() => {
   }
   if (changed) emit();
 }, 15000);
+
+// ---------- sessions that started before the hooks existed (or before the app): find them via their transcripts ----------
+const PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
+function transcriptHead(file) {
+  try {
+    const fd = fs.openSync(file, 'r'); const buf = Buffer.alloc(65536); const n = fs.readSync(fd, buf, 0, 65536, 0); fs.closeSync(fd);
+    for (const line of buf.subarray(0, n).toString('utf8').split('\n')) {
+      if (!line.includes('"cwd"')) continue;
+      try { const o = JSON.parse(line); if (o.cwd) return { cwd: o.cwd, sessionId: o.sessionId }; } catch {}
+    }
+  } catch {}
+  return null;
+}
+function discoverSessions() {
+  let changed = false;
+  const now = Date.now();
+  let dirs = [];
+  try { dirs = fs.readdirSync(PROJECTS_DIR); } catch { return; }
+  const seenFiles = new Set();
+  for (const d of dirs) {
+    let files = [];
+    try { files = fs.readdirSync(path.join(PROJECTS_DIR, d)).filter((f) => f.endsWith('.jsonl')); } catch { continue; }
+    for (const f of files) {
+      const file = path.join(PROJECTS_DIR, d, f);
+      let st; try { st = fs.statSync(file); } catch { continue; }
+      if (now - st.mtimeMs > 20 * 60 * 1000) continue;
+      const id = f.slice(0, -6);
+      seenFiles.add(id);
+      let s = sessions.get(id);
+      if (!s) {
+        const head = transcriptHead(file);
+        if (!head || dismissed.get(id) >= st.mtimeMs) continue;
+        s = getSession(id, { cwd: head.cwd, transcript_path: file });
+        s.discovered = true; s.noHooks = true; s.updated = st.mtimeMs; s.status = 'idle';
+        readContext(s); changed = true;
+      } else if (s.noHooks) {
+        // no hook events for this session: infer "working" from the transcript still being written
+        const active = now - st.mtimeMs < 8000;
+        if (active && !['thinking', 'tool'].includes(s.status)) { s.status = 'thinking'; s.updated = now; changed = true; }
+        else if (!active && s.status === 'thinking') { s.status = 'idle'; changed = true; }
+        if (st.mtimeMs > s.updated) { s.updated = st.mtimeMs; readContext(s); changed = true; }
+      }
+    }
+  }
+  for (const [id, s] of sessions) if (s.discovered && s.noHooks && !seenFiles.has(id)) { sessions.delete(id); changed = true; }
+  if (changed) emit();
+}
+const dismissed = new Map(); // sessionId -> mtime at dismissal, so a dismissed idle session stays gone until it writes again
+setInterval(discoverSessions, 10000);
+setTimeout(discoverSessions, 1500);
+
+// live chat for the session the panel is looking at
+let chatSig = '';
+function chatMessages(s) { return s ? chatLib.scan(s, s.transcript) : []; }
+setInterval(() => {
+  const s = sessions.get(selectedId);
+  if (!s || !uiState.drawer) return;
+  const msgs = chatMessages(s);
+  const last = msgs[msgs.length - 1];
+  const sig = selectedId + ':' + msgs.length + ':' + (last ? last.text.length + ':' + last.tools.length : 0);
+  if (sig !== chatSig) { chatSig = sig; emit(); }
+}, 1000);
 
 // ---------- desktop pet: stroll along the screen while Claude is idle, run home when Claude needs you ----------
 let uiState = { drawer: false, typing: false };

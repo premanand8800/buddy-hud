@@ -27,7 +27,7 @@ A floating pixel buddy for [Claude Code](https://claude.com/claude-code). It sit
 - **Phone access (opt-in).** Approve permissions and reply from your phone on the same Wi-Fi. Off by default; see Privacy.
 - **Walks around.** When Claude is idle the buddy strolls along your screen, stops to look around, sits down or naps. When Claude needs you it runs back to the spot where you parked it and waves. Drag it to set its home; turn walking off in settings or the tray.
 - **Looks.** Bot (default), Cat, Classic (logo homage), or **3D (beta)**: a soft-voxel buddy with real lighting that turns to face where it walks, types on a little keyboard, holds up a book while reading and swings a magnifying glass while searching. 3D uses more CPU on machines without GPU acceleration (measured on a laptop without it: about 10% asleep, about 34% while Claude works, versus about 8% / 13% for the flat looks).
-- **Multiple sessions.** One tab per Claude Code session.
+- **Every session, live chat.** All your Claude Code sessions appear as chips (even ones started before Buddy HUD). The 💬 Chat tab shows the selected session's conversation live and lets you reply from there. Delivery depends on the situation, see [Replying](#replying).
 
 Click the buddy (or the pill) for details; the ⚙️ and 🎨 buttons beside it open Settings (alerts, privacy, phone) and Customize (look, size, walking). Drag it anywhere.
 

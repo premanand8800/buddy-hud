@@ -124,6 +124,30 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     assert.strictEqual(ctxOf('c3').max, 200000, 'no signal means the standard 200k window');
     for (const id of ['c1', 'c2', 'c3']) await post({ session_id: id, hook_event_name: 'SessionEnd' });
 
+    // sessions that started before the hooks (or the app): discovered from recent transcripts, shown with their live chat
+    const projDir = path.join(home, '.claude', 'projects', '-tmp-found'); fs.mkdirSync(projDir, { recursive: true });
+    const tfile = path.join(projDir, 'found-1.jsonl');
+    const row = (o) => JSON.stringify({ timestamp: new Date().toISOString(), cwd: '/tmp/found-proj', sessionId: 'found-1', ...o }) + '\n';
+    fs.writeFileSync(tfile, row({ type: 'user', uuid: 'f1', message: { role: 'user', content: 'hello from another terminal' } }) + row({ type: 'assistant', uuid: 'f2', message: { id: 'fm1', role: 'assistant', model: 'claude-sonnet-5-5', content: [{ type: 'text', text: 'Hi! **Ready.**' }], usage: { input_tokens: 5, output_tokens: 3 } } }));
+    st = await waitFor(async () => { const s = await state(); return s.sessions.some((x) => x.id === 'found-1') && s; }, 'discovered session (up to ~12 s)', 16000);
+    const fs1 = st.sessions.find((x) => x.id === 'found-1');
+    assert.strictEqual(fs1.project, 'found-proj'); assert.ok(fs1.discovered);
+    await req('POST', '/__select/found-1');
+    st = await state();
+    assert.strictEqual(st.chat.id, 'found-1');
+    assert.deepStrictEqual(st.chat.msgs.map((x) => x.role), ['user', 'assistant']);
+    assert.ok(st.chat.msgs[1].text.includes('**Ready.**'));
+    fs.appendFileSync(tfile, row({ type: 'user', uuid: 'f3', message: { role: 'user', content: 'a second question' } }));
+    st = await state(); assert.strictEqual(st.chat.msgs.length, 3, 'chat follows the transcript live');
+    const phc = (url, body) => new Promise((resolve, reject) => { const r = http.request({ host: '127.0.0.1', port: 47813, path: url, method: 'POST', agent: false, headers: { 'Content-Type': 'application/json' } }, (res) => { let o = ''; res.on('data', (d) => (o += d)); res.on('end', () => resolve(o)); }); r.on('error', reject); r.end(body); });
+    await waitFor(async () => { try { await phc('/api/reply?t=tok123', JSON.stringify({ sessionId: 'found-1', text: 'typed from the buddy' })); return true; } catch { return false; } }, 'phone reply');
+    st = await state();
+    assert.ok(st.chat.pending.some((p) => p.text === 'typed from the buddy' && p.mode === 'queued'), 'undelivered message shows as pending/queued');
+    fs.appendFileSync(tfile, row({ type: 'user', uuid: 'f4', message: { role: 'user', content: 'typed from the buddy' } }));
+    st = await state(); assert.strictEqual(st.chat.pending.length, 0, 'pending disappears once it appears in the transcript');
+    await req('POST', '/__select/s1');
+    await post({ session_id: 'found-1', hook_event_name: 'SessionEnd' });
+
     // issue #1: one permission prompt = one alert; idle pings are quiet; real questions alert once per 30 s
     await post({ session_id: 'n1', cwd: '/tmp/n', hook_event_name: 'UserPromptSubmit', prompt: 'x' });
     const askCount = async () => (await state()).alertLog.filter((a) => a.startsWith('ask:')).length;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+- **Every Claude Code session is shown** (requested by a tester running three terminals). Sessions that were already open before Buddy HUD or its hooks existed are discovered from their transcripts. A strip of session chips shows each one's state (working, needs you, finished, idle); click to switch, ✕ to hide one.
+- **Live chat tab** 💬: the full conversation of the selected session, updating as it happens (your messages, Claude's replies in readable markdown, and the tools it used). Type a reply from the same panel. Messages show whether they were delivered or are still waiting for Claude's next step.
+- Tabs are now icon-only except the active one, so four fit.
+
 ## 0.5.0
 
 - **Settings reorganised** (requested by a Mac tester): the panel now has three tabs: **Details** (health, usage, files, activity), **Settings** (all notification and sound switches, replies, privacy, phone, quit) and **Customize** (character, size, walking, always show). Quick ⚙️ and 🎨 buttons beside the pill open Settings and Customize directly.
