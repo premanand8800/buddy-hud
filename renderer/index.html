@@ -133,10 +133,17 @@
       <div id="aura"><div class="ring"></div><div class="ring r2"></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="shadow"></div>
       <svg id="clawd" viewBox="-40 -56 240 224" data-act="idle" data-eyes="sleep" data-look="">
+        <defs><radialGradient id="portalGrad"><stop offset="0" stop-color="#1b1030"/><stop offset="55%" stop-color="#3a1d5c"/><stop offset="100%" stop-color="#ff8c1a"/></radialGradient><radialGradient id="flashGrad"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="60%" stop-color="#cfe6ff" stop-opacity=".45"/><stop offset="100%" stop-color="#cfe6ff" stop-opacity="0"/></radialGradient></defs>
         <g class="fx" id="fx">
           <rect x="-34" y="30" width="16" height="4"/><rect x="-40" y="52" width="22" height="4"/><rect x="-34" y="74" width="16" height="4"/>
           <rect x="178" y="30" width="16" height="4"/><rect x="178" y="52" width="22" height="4"/><rect x="178" y="74" width="16" height="4"/>
         </g>
+        <g id="world">
+            <g class="st-spider"><path class="webline wj" d="M99 87 L99 87"/><circle class="thwip" cx="0" cy="0" r="0"/></g>
+            <g class="st-thor"><ellipse class="flash" cx="80" cy="60" rx="140" ry="130"/><g class="cloud"><ellipse cx="40" cy="-34" rx="44" ry="16"/><ellipse cx="86" cy="-42" rx="50" ry="19"/><ellipse cx="128" cy="-32" rx="40" ry="15"/></g><path class="bolt b1" d="M70 -26 L58 0 L72 0 L56 36"/><path class="bolt b2" d="M120 -24 L132 -2 L120 -2 L138 30"/><path class="bolt b3" d="M176 14 L196 -14 L186 -14 L210 -44"/><g class="rain"><path d="M20 -20 v14 M52 -10 v14 M96 -14 v14 M140 -8 v14 M170 -18 v14"/></g><path class="strike" d="M84 -34 L66 20 L88 20 L62 84 L90 84 L70 150"/><ellipse class="shock" cx="80" cy="150" rx="10" ry="4"/></g>
+            <g class="st-strange"><g class="portal pa"><ellipse class="pin" cx="-4" cy="108" rx="24" ry="36"/><ellipse class="pring" cx="-4" cy="108" rx="30" ry="42"/><ellipse class="pring r2" cx="-4" cy="108" rx="22" ry="34"/></g><g class="portal pb"><ellipse class="pin" cx="164" cy="108" rx="24" ry="36"/><ellipse class="pring" cx="164" cy="108" rx="30" ry="42"/><ellipse class="pring r2" cx="164" cy="108" rx="22" ry="34"/></g></g>
+            <g class="st-batman"><polygon class="cone" points="-60 200 -20 -40 140 -40 190 200"/><g class="moon"><circle cx="150" cy="-34" r="26"/><path class="batsil" d="M132 -34 Q140 -46 150 -40 Q160 -46 168 -34 Q160 -36 156 -26 L150 -32 L144 -26 Q140 -36 132 -34Z"/></g><path class="grapple" d="M178 44 L230 -46"/></g>
+          </g>
         <g class="rig">
           <g class="canoe" id="canoe" transform="translate(0,-14)"><path class="hull" d="M-46 154 Q-52 146 -40 146 L200 146 Q212 146 206 154 Q196 172 160 174 L0 174 Q-36 172 -46 154Z"/><path class="trim" d="M-44 150 L204 150 L202 154 L-42 154Z"/><path class="wave" d="M-30 180 q10 -5 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>
         <g class="body">
@@ -170,13 +177,10 @@
             </g>
             </g>
           <g id="stunt">
-            <g class="st-spider"><path class="webline" d="M80 -56 V-4"/><path class="webline w2" d="M178 40 Q190 -10 200 -56"/></g>
-            <g class="st-thor"><g class="cloud"><ellipse cx="40" cy="-34" rx="44" ry="16"/><ellipse cx="86" cy="-42" rx="50" ry="19"/><ellipse cx="128" cy="-32" rx="40" ry="15"/></g><path class="bolt b1" d="M70 -26 L58 0 L72 0 L56 36"/><path class="bolt b2" d="M120 -24 L132 -2 L120 -2 L138 30"/><path class="bolt b3" d="M176 14 L196 -14 L186 -14 L210 -44"/><g class="rain"><path d="M20 -20 v14 M52 -10 v14 M96 -14 v14 M140 -8 v14 M170 -18 v14"/></g></g>
             <g class="st-captain"><g class="fly"><circle class="s1" r="34"/><circle class="s2" r="26"/><circle class="s1" r="18"/><circle class="s3" r="11"/><polygon class="sstar" points="0,-8 2.4,-2.6 8,-2.6 3.4,1 5,6.6 0,3.4 -5,6.6 -3.4,1 -8,-2.6 -2.4,-2.6"/></g></g>
-            <g class="st-iron"><g class="jets"><path class="j1" d="M8 158 Q16 186 24 158Z"/><path class="j1" d="M44 158 Q52 186 60 158Z"/><path class="j1" d="M115 158 Q123 186 131 158Z"/><path class="j1" d="M152 158 Q160 186 168 158Z"/></g><rect class="beam" x="182" y="52" width="150" height="8" rx="4"/><circle class="muzzle" cx="178" cy="56" r="12"/></g>
+            <g class="st-iron"><g class="boots"><rect x="-2" y="140" width="20" height="18"/><rect x="34" y="140" width="20" height="18"/><rect x="105" y="140" width="20" height="18"/><rect x="142" y="140" width="20" height="18"/></g><path class="trail" d="M-40 90 H-160 M-30 110 H-150 M-30 70 H-140"/><g class="jets"><path class="j1" d="M8 158 Q16 186 24 158Z"/><path class="j1" d="M44 158 Q52 186 60 158Z"/><path class="j1" d="M115 158 Q123 186 131 158Z"/><path class="j1" d="M152 158 Q160 186 168 158Z"/></g><rect class="beam" x="182" y="52" width="150" height="8" rx="4"/><circle class="muzzle" cx="178" cy="56" r="12"/></g>
             <g class="st-strange"><g class="mandala m1"><circle cx="-6" cy="56" r="30"/><circle cx="-6" cy="56" r="20"/><path d="M-6 26 V86 M-36 56 H24 M-27 35 L15 77 M15 35 L-27 77"/></g><g class="mandala m2"><circle cx="166" cy="56" r="30"/><circle cx="166" cy="56" r="20"/><path d="M166 26 V86 M136 56 H196 M145 35 L187 77 M187 35 L145 77"/></g><circle class="spark sp1" cx="-30" cy="20" r="3"/><circle class="spark sp2" cx="190" cy="20" r="3"/><circle class="spark sp3" cx="80" cy="-30" r="3"/></g>
             <g class="st-superman"><path class="sline" d="M-40 20 H-120 M-30 44 H-130 M-36 70 H-110 M-30 96 H-100"/><g class="puffs"><ellipse cx="-70" cy="130" rx="22" ry="9"/><ellipse cx="190" cy="140" rx="26" ry="10"/></g></g>
-            <g class="st-batman"><polygon class="cone" points="-60 200 -20 -40 140 -40 190 200"/><g class="moon"><circle cx="150" cy="-34" r="26"/><path class="batsil" d="M132 -34 Q140 -46 150 -40 Q160 -46 168 -34 Q160 -36 156 -26 L150 -32 L144 -26 Q140 -36 132 -34Z"/></g><path class="grapple" d="M178 44 L230 -46"/></g>
           </g>
         </g>
         <text id="item" x="80" y="-20" text-anchor="middle"></text>

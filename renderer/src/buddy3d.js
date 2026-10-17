@@ -153,6 +153,20 @@ if (renderer) {
   const mask = new THREE.Group(); mask.visible = false; face.add(mask);
   for (const x of [29, 131]) { const [px, py] = P(x, 50); const l = box(0.4, 0.2, 0.05, new THREE.MeshBasicMaterial({ color: 0xffffff }), 0.05); l.position.set(px, py, 0.05); l.rotation.z = (x < 80 ? -1 : 1) * 0.22; mask.add(l); }
 
+  // keyframe helper: p in 0..1, frames [[p, v], ...] (linear)
+  const kf = (p, fr) => { if (p <= fr[0][0]) return fr[0][1]; for (let i = 1; i < fr.length; i++) if (p <= fr[i][0]) { const [a, va] = fr[i - 1], [b, vb] = fr[i]; return va + (vb - va) * ((p - a) / (b - a || 1)); } return fr[fr.length - 1][1]; };
+  // world-space effects for the new stunts
+  const portalGrp = [0, 1].map((k) => { const g = new THREE.Group(); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.045, 10, 36), new THREE.MeshBasicMaterial({ color: 0xffa63a })); const inner = new THREE.Mesh(new THREE.CircleGeometry(0.46, 32), new THREE.MeshBasicMaterial({ color: 0x2a1450, transparent: true, opacity: 0.9 })); g.add(inner, ring); g.position.set(k ? 0.85 : -0.85, 0.5, 0.2); g.scale.setScalar(0.01); g.visible = false; scene.add(g); return g; });
+  const strikeBolt = box(0.07, 2.4, 0.05, new THREE.MeshBasicMaterial({ color: 0xfff9b8 }), 0.02); strikeBolt.position.set(0, 1.2, 0.3); strikeBolt.visible = false; scene.add(strikeBolt);
+  const flashLight = new THREE.PointLight(0xcfe6ff, 0, 6); flashLight.position.set(0, 1.2, 2); scene.add(flashLight);
+  const gold = new THREE.MeshStandardMaterial({ color: 0xe0b030, roughness: 0.35, metalness: 0.5 });
+  const armor = new THREE.Group(); armor.visible = false; root.add(armor);
+  const boots = [-0.72, -0.36, 0.35, 0.72].map((x) => { const b = box(0.21, 0.2, 0.34, gold, 0.04); b.position.set(x, -0.3, 0); armor.add(b); return b; });
+  const facePlate = box(1.35, 0.62, 0.06, gold, 0.1); facePlate.position.set(0, 0.74, D / 2 + 0.05); armor.add(facePlate);
+  const reactor = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.03, 8, 20), new THREE.MeshBasicMaterial({ color: 0x7ee8ff })); reactor.position.set(0, 0.28, D / 2 + 0.06); armor.add(reactor);
+  const jets = [-0.72, 0.72].map((x) => { const j = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 10), new THREE.MeshBasicMaterial({ color: 0x7ee8ff })); j.rotation.x = Math.PI; j.position.set(x, -0.75, 0); j.visible = false; root.add(j); return j; });
+  const wcol = new THREE.Vector3();
+
   // canoe for the aura-farming pose (Pacu Jalur boat)
   const canoe = new THREE.Group(); canoe.visible = false; canoe.scale.set(0.7, 0.85, 0.85); canoe.position.y = 0.12; root.add(canoe);
   { const hullMat = new THREE.MeshStandardMaterial({ color: 0x6b3f2a, roughness: 0.7 });
@@ -192,7 +206,7 @@ if (renderer) {
     let targetYaw = Math.sin(t * 0.6) * 0.32; // slow turntable sway shows off the depth
     let by = Math.sin(t * Math.PI * 2 / 2.6) * 0.015, roll = 0, pitch = 0, sx = 1, sy = 1, hop = 0;
     let lPX = -0.9, lPY = 0.76, rPX = 0.9, rPY = 0.76, lRotX = 0, lRotZ = 0, rRotX = 0, rRotZ = 0, lPosZ = 0, rPosZ = 0, legSwing = 0, legLift = 0, legScale = 1;
-    let showWeb = false, showRings = false, showCanoe = false, showKb = false, showBook = false, showLens = false, eyeX = 0, eyeY = 0;
+    let rx = 0, showWeb = false, showRings = false, showCanoe = false, showKb = false, showBook = false, showLens = false, eyeX = 0, eyeY = 0;
     handMat.color.copy(st.costume !== 'none' ? handBase : col);
 
     switch (a) {
@@ -243,14 +257,49 @@ if (renderer) {
       case 'hero': {
         const c = st.costume;
         targetYaw = Math.sin(t * 0.6) * 0.3; const w = t * 2;
-        if (c === 'spider') { roll = Math.sin(w * 0.8) * 0.35; rRotZ = 2.9; rRotX = -0.2; by = Math.sin(w * 0.8) * 0.04; showWeb = true; }
-        else if (c === 'thor') { rRotZ = 2.9 + Math.sin(t * 5) * 0.08; rRotX = -0.3; by = Math.abs(Math.sin(t * 4)) * 0.02; }
+        let rootVis = true;
+        if (c === 'spider') {
+          const p = (t % 9) / 9;
+          rx = kf(p, [[0, -0.7], [0.14, -0.7], [0.28, -0.2], [0.4, 0.62], [0.44, 0.7], [0.52, 0.7], [0.72, -0.2], [0.84, -0.62], [0.88, -0.7], [1, -0.7]]);
+          hop = kf(p, [[0, 0], [0.16, 0], [0.28, 0.5], [0.4, 0.1], [0.44, 0], [0.54, 0], [0.72, 0.5], [0.84, 0.1], [0.88, 0], [1, 0]]);
+          roll = kf(p, [[0, 0], [0.16, 0.2], [0.28, -0.7], [0.4, -0.25], [0.44, 0], [0.54, -0.2], [0.72, 0.7], [0.84, 0.25], [0.88, 0], [1, 0]]);
+          rRotZ = 2.9; rRotX = -0.2; lRotZ = -0.5;
+          const going = p > 0.16 && p < 0.46, back = p > 0.54 && p < 0.9;
+          showWeb = going || back;
+          if (showWeb) { const ax = going ? 1.15 : -1.15, ay = 1.9; const hx = rx + (going ? 0.85 : 0.85) * Math.cos(roll), hy = hop + 0.9; wcol.set(ax - hx, ay - hy, 0); const len = wcol.length(); web.position.set((ax + hx) / 2, (ay + hy) / 2, 0.3); web.rotation.z = Math.atan2(wcol.y, wcol.x) - Math.PI / 2; web.scale.set(1, len / 1.4, 1); }
+        } else if (c === 'thor') {
+          const p = (t % 7) / 7;
+          rootVis = p > 0.14 && p < 0.86;
+          const pop = kf(p, [[0.14, 1.3], [0.19, 1], [0.82, 1.05], [0.86, 0.9]]); root.scale.setScalar(pop);
+          strikeBolt.visible = (p > 0.13 && p < 0.17) || (p > 0.83 && p < 0.86);
+          flashLight.intensity = kf(p, [[0, 0], [0.13, 0], [0.14, 14], [0.18, 0], [0.83, 0], [0.84, 10], [0.88, 0], [1, 0]]);
+          rRotZ = 2.9 + Math.sin(t * 5) * 0.08; rRotX = -0.3;
+        } else if (c === 'strange') {
+          const p = (t % 8) / 8;
+          const sA = kf(p, [[0, 0.01], [0.12, 1], [0.38, 1], [0.46, 0.01], [1, 0.01]]), sB = kf(p, [[0, 0.01], [0.4, 0.01], [0.54, 1], [0.8, 1], [0.9, 0.01], [1, 0.01]]);
+          portalGrp[0].visible = sA > 0.02; portalGrp[0].scale.setScalar(sA * 0.8); portalGrp[1].visible = sB > 0.02; portalGrp[1].scale.setScalar(sB * 0.8);
+          portalGrp[0].rotation.z = t * 1.5; portalGrp[1].rotation.z = -t * 1.5;
+          rx = kf(p, [[0, 0], [0.12, 0], [0.34, -0.78], [0.35, 0.78], [0.58, 0.78], [0.78, 0]]);
+          const sc = kf(p, [[0, 1], [0.12, 1], [0.34, 0.1], [0.35, 0.1], [0.58, 0.2], [0.78, 1]]); root.scale.setScalar(sc);
+          lRotZ = -1.2; rRotZ = 1.2; showRings = p < 0.2 || (p > 0.78 && p < 0.92);
+        } else if (c === 'iron') {
+          const p = (t % 9) / 9;
+          armor.visible = true;
+          const show = (a, b2) => kf(p, [[0, 0], [a, 0], [b2, 1], [0.9, 1], [0.96, 0], [1, 0]]);
+          boots.forEach((bt, i) => { const v = show(0.04 + i * 0.01, 0.12 + i * 0.01); bt.visible = v > 0.01; bt.position.y = -0.3 - (1 - v) * 0.9; });
+          const fp = show(0.18, 0.25); facePlate.visible = fp > 0.01; facePlate.position.y = 0.74 + (1 - fp) * 1.2;
+          const rc = show(0.26, 0.32); reactor.visible = rc > 0.01; reactor.scale.setScalar(Math.max(0.01, rc));
+          const hv = show(0.08, 0.18); lPX = -0.9 - (1 - hv) * 1.2; rPX = 0.9 + (1 - hv) * 1.2;
+          rx = kf(p, [[0, 0], [0.5, 0], [0.52, -0.5], [0.62, 0.9], [0.7, 0.95], [0.78, -0.5], [0.84, 0], [1, 0]]);
+          hop = kf(p, [[0, 0], [0.38, 0], [0.46, 0.35], [0.62, 0.7], [0.7, 0.5], [0.78, 0.5], [0.84, 0.3], [0.88, 0], [1, 0]]);
+          roll = kf(p, [[0, 0], [0.46, 0], [0.52, 1.0], [0.62, 1.3], [0.7, -1.2], [0.78, -1.2], [0.84, 0], [1, 0]]);
+          rRotX = -1.4; rRotZ = 0.3; lRotZ = -0.4;
+          jets.forEach((j) => { j.visible = p > 0.38 && p < 0.86; j.scale.y = 1 + Math.sin(t * 40) * 0.25; });
+        } else if (c === 'superman') { hop = 0.3 + Math.sin(w) * 0.1; roll = -0.55; pitch = 0.15; rRotZ = 2.6; rRotX = -0.4; }
         else if (c === 'captain') { lRotZ = -0.6; lRotX = -1.0; lPosZ = 0.15; roll = Math.sin(w) * 0.03; }
-        else if (c === 'iron') { hop = 0.2 + Math.sin(w) * 0.06; rRotX = -1.5; rRotZ = 0.3; lRotZ = -0.4; legSwing = 0; }
-        else if (c === 'strange') { lRotZ = -1.2; rRotZ = 1.2; by = Math.sin(w) * 0.02; showRings = true; }
-        else if (c === 'superman') { hop = 0.3 + Math.sin(w) * 0.1; roll = -0.55; pitch = 0.15; rRotZ = 2.6; rRotX = -0.4; }
         else if (c === 'batman') { roll = Math.sin(w * 0.7) * 0.05; rRotZ = 0; by = 0; }
         else { by = Math.sin(w) * 0.02; }
+        root.visible = rootVis;
         break;
       }
       case 'farm': {
@@ -265,6 +314,10 @@ if (renderer) {
         by = -0.01; targetYaw = 0.22; pitch = 0.05;
     }
 
+    if (!(st.act === 'hero' && ['spider', 'thor', 'strange', 'iron'].includes(st.costume))) {
+      root.visible = true; root.scale.setScalar(1); armor.visible = false; portalGrp.forEach((g) => { g.visible = false; }); strikeBolt.visible = false; flashLight.intensity = 0; jets.forEach((j) => { j.visible = false; });
+    }
+    root.position.x = rx;
     yaw = ease(yaw, targetYaw, k * 0.9);
     root.rotation.y = yaw;
     root.position.y = hop;
