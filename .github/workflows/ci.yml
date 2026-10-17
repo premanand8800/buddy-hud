@@ -1,11 +1,44 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
 jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Syntax check every JS file
+        run: |
+          fail=0
+          for f in $(git ls-files '*.js' | grep -v '^renderer/buddy3d.bundle.js$'); do node --check "$f" || fail=1; done
+          exit $fail
+      - name: 3D bundle is up to date with its source
+        run: |
+          npm run build:3d
+          git diff --exit-code renderer/buddy3d.bundle.js || (echo "::error::renderer/buddy3d.bundle.js is stale. Run 'npm run build:3d' and commit it."; exit 1)
+      - name: No secrets committed
+        run: |
+          if git grep -n -I -E 'sk-or-v1-[0-9a-f]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----' -- . ':!package-lock.json'; then
+            echo "::error::Possible secret found above"; exit 1
+          fi
+      - name: Runtime dependencies have no known high/critical vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
   unit:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    name: unit (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -14,8 +47,8 @@ jobs:
       - run: npm ci
       - run: node test/install-hooks.test.js
       - run: node test/usage.test.js
-      - run: node --check main.js && node --check renderer/app.js
   e2e-linux:
+    name: e2e-linux
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    name: package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
