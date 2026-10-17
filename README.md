@@ -90,7 +90,7 @@ Claude Code [hooks](https://docs.claude.com/en/docs/claude-code/hooks) POST each
 
 | Symptom | Fix |
 |---|---|
-| macOS: "Buddy HUD is damaged and can't be opened" | Run `xattr -cr "/Applications/Buddy HUD.app"` (clears the download quarantine flag), then open it again. Fixed in builds after 0.4.4. |
+| macOS: "Buddy HUD is damaged and can't be opened" | Run `xattr -cr "/Applications/Buddy HUD.app"` (clears the download quarantine flag), then open it again. Fixed in 0.4.5 and later. |
 | Nothing appears | Start a new `claude` session (existing ones keep the old hook config). Check the tray menu: "Install Claude Code hooks". |
 | "Port 47800 is already in use" | Another copy is running. Quit it from its tray icon. |
 | Buddy is not on top (Linux) | Needs X11 or XWayland. The app relaunches itself with `--ozone-platform=x11`. |
