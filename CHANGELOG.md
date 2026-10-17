@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fix: on Linux Wayland sessions the AppImage quit silently at start-up (it tried to restart itself in X11 mode from a mount that was already gone). It now restarts the AppImage file itself.
+- README: the AppImage needs FUSE 2 on Ubuntu 22.04+ (`sudo apt install libfuse2t64`).
+
 ## 0.12.2
 
 - Fix: with a hero costume on, the costume art covered an emote's gloves, face and goggles in the flat looks. The emote now draws in front.
