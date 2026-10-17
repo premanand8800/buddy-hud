@@ -10,15 +10,27 @@ const mu = require('../lib/macupdate');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const REL = 'https://github.com/premanand8800/buddy-hud/releases/download/v9.9.9/';
 const SHA = 'a'.repeat(64);
+const kp = crypto.generateKeyPairSync('ed25519');
+const PUB = kp.publicKey.export({ type: 'spki', format: 'pem' });
+const sign = (name, sha) => crypto.sign(null, Buffer.from(`${name}:${sha}`), kp.privateKey).toString('base64');
 
 (async () => {
   // pickZip: this arch's zip, only with a GitHub digest and a URL from this repo's releases
   const assets = [
     { name: 'buddy-hud-9.9.9-mac-arm64.dmg', browser_download_url: REL + 'buddy-hud-9.9.9-mac-arm64.dmg', digest: 'sha256:' + SHA },
     { name: 'buddy-hud-9.9.9-mac-arm64.zip', browser_download_url: REL + 'buddy-hud-9.9.9-mac-arm64.zip', digest: 'sha256:' + SHA, size: 5 },
+    { name: 'buddy-hud-9.9.9-mac-arm64.zip.sig', browser_download_url: REL + 'buddy-hud-9.9.9-mac-arm64.zip.sig' },
     { name: 'buddy-hud-9.9.9-mac-x64.zip', browser_download_url: REL + 'buddy-hud-9.9.9-mac-x64.zip' },
   ];
-  assert.deepStrictEqual(mu.pickZip(assets, 'arm64'), { url: REL + 'buddy-hud-9.9.9-mac-arm64.zip', sha256: SHA, size: 5 });
+  assert.deepStrictEqual(mu.pickZip(assets, 'arm64'), { url: REL + 'buddy-hud-9.9.9-mac-arm64.zip', sha256: SHA, size: 5, name: 'buddy-hud-9.9.9-mac-arm64.zip', sigUrl: REL + 'buddy-hud-9.9.9-mac-arm64.zip.sig' });
+  assert.strictEqual(mu.pickZip(assets.filter((x) => !x.name.endsWith('.sig')), 'arm64'), null, 'unsigned release -> no auto update');
+
+  // signatures: only our private key's signature over name:sha256 verifies
+  assert.ok(mu.verifySignature('f.zip:' + SHA, sign('f.zip', SHA), PUB));
+  assert.ok(!mu.verifySignature('f.zip:' + SHA, sign('g.zip', SHA), PUB), 'signature is bound to the file name');
+  assert.ok(!mu.verifySignature('f.zip:' + 'b'.repeat(64), sign('f.zip', SHA), PUB), 'signature is bound to the content hash');
+  assert.ok(!mu.verifySignature('f.zip:' + SHA, 'AAAA', PUB) && !mu.verifySignature('f.zip:' + SHA, '', PUB));
+  assert.ok(!mu.verifySignature('f.zip:' + SHA, sign('f.zip', SHA)), 'the embedded public key does not accept a foreign signature');
   assert.strictEqual(mu.pickZip(assets, 'x64'), null, 'no digest -> no auto update');
   assert.strictEqual(mu.pickZip([{ ...assets[1], browser_download_url: 'https://evil.example/buddy-hud-9.9.9-mac-arm64.zip' }], 'arm64'), null);
 
@@ -68,12 +80,18 @@ const SHA = 'a'.repeat(64);
     files['/u.zip'] = fs.readFileSync(zipFile);
     const zsha = crypto.createHash('sha256').update(files['/u.zip']).digest('hex');
     const staging = path.join(dir, 'staging');
+    const NAME = 'buddy-hud-9.9.9-mac-arm64.zip';
+    files['/u.sig'] = Buffer.from(sign(NAME, zsha));
+    files['/bad.sig'] = Buffer.from(sign(NAME, SHA));
+    const Z = (extra = {}) => ({ url: base + '/u.zip', sha256: zsha, name: NAME, sigUrl: base + '/u.sig', ...extra });
 
     // wrong checksum or wrong version: nothing staged
-    await assert.rejects(mu.prepare({ zip: { url: base + '/u.zip', sha256: SHA }, version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true } }), /checksum mismatch/);
-    await assert.rejects(mu.prepare({ zip: { url: base + '/u.zip', sha256: zsha }, version: '9.9.8', stagingDir: staging, downloadOpts: { allowHttp: true } }), /version mismatch/);
+    await assert.rejects(mu.prepare({ zip: Z({ sha256: SHA }), version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true }, pubKey: PUB }), /checksum mismatch/);
+    await assert.rejects(mu.prepare({ zip: Z(), version: '9.9.8', stagingDir: staging, downloadOpts: { allowHttp: true }, pubKey: PUB }), /version mismatch/);
 
-    const staged = await mu.prepare({ zip: { url: base + '/u.zip', sha256: zsha }, version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true } });
+    await assert.rejects(mu.prepare({ zip: Z({ sigUrl: base + '/bad.sig' }), version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true }, pubKey: PUB }), /signature check failed/);
+    await assert.rejects(mu.prepare({ zip: Z(), version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true } }), /signature check failed/); // default key is the real one, not the test key
+    const staged = await mu.prepare({ zip: Z(), version: '9.9.9', stagingDir: staging, downloadOpts: { allowHttp: true }, pubKey: PUB });
     assert.ok(fs.existsSync(path.join(staged, 'Contents', 'Info.plist')));
 
     // swap: waits for the "app" process to exit, replaces the installed copy, cleans up staging

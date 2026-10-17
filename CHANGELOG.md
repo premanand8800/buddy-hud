@@ -4,6 +4,7 @@
 
 - **Automatic updates on macOS.** When a new release is out, Buddy HUD downloads it in the background, checks it against GitHub's SHA-256 checksum, verifies the app's identity, version and signature, and then offers **Restart to update** (or installs it the next time you quit). No browser download, so no "damaged" or "can't be checked for malware" prompt on updates. Needs the app in a folder it can write to (e.g. Applications); otherwise, and on Windows/Linux, you get the Download button as before. This version still has to be installed by hand once; updates after it are automatic.
 - Fix: the update check treated every check as a new release, re-alerting every 12 hours.
+- **Signed updates**: the macOS updater only installs a zip carrying a valid Ed25519 signature from the release key (checked against a public key built into the app), on top of the checksum and bundle checks. Releases are signed by a CI job that runs in a protected `release` environment and needs the owner's approval. Unsigned releases fall back to the manual Download button.
 
 ## 0.10.1
 
