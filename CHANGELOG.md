@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.4.5
 
-- Fix (macOS): the downloaded app was reported as "damaged and can't be opened". With no Apple certificate electron-builder skipped signing, so after the bundle was renamed and its Info.plist edited, Electron's original signature no longer matched and Apple Silicon refused the quarantined app. Builds are now signed ad-hoc (`identity: "-"`, hardened runtime off), which gives a valid bundle signature. macOS still shows the normal "unidentified developer" prompt because the app is not notarized (see the README for how to open it). Already-downloaded 0.4.4 and older builds: run `xattr -cr "/Applications/Buddy HUD.app"`.
+- CI: every pull request now runs syntax, stale-3D-bundle, secret-scan, dependency-audit, unit (3 OS), end-to-end and packaging (3 OS) checks; `main` requires them to pass.
+- Fix (macOS): the downloaded app was reported as "damaged and can't be opened". With no Apple certificate electron-builder skipped signing, so after the bundle was renamed and its Info.plist edited, Electron's original signature no longer matched and Apple Silicon refused the quarantined app. Builds are now signed ad-hoc (`identity: "-"`, hardened runtime off), which gives a valid bundle signature. macOS still shows the normal "unidentified developer" prompt because the app is not notarized (see the README for how to open it). Thanks to @Samir-kumal for finding and fixing this. Already-downloaded 0.4.4 and older builds: run `xattr -cr "/Applications/Buddy HUD.app"`.
 
 ## 0.4.4
 
