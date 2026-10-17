@@ -3,12 +3,11 @@
 ## 0.12.1
 
 - **New release signing key.** The previous key was never installed in the release pipeline, so 0.12.0 shipped without update signatures and 0.11.0/0.12.0 cannot update themselves to it. Install 0.12.1 by hand once (Download button or the GitHub release page); automatic updates work again from 0.12.1 onward, on macOS, Windows and Linux.
+- **Designer-made hero costumes.** The seven hero costumes are now real illustrated outfits instead of tinted shapes: masks and cowls, winged helmet, star-and-stripe chest, gold faceplate with arc reactor, collar and amulet, chest emblems, belts, boots and shading. One art source (`renderer/costumes.js`) drives both the flat looks and the 3D look, where it is painted onto the body as a texture.
 
 ## 0.12.0
 
 - **Emotes** (🎭 button beside 💬 ⚙️ 🎨): a tray of 14 animated meme gestures: nope finger-wag, point, finger guns, dab, shrug, vibe with headphones, facepalm, shh, scheming, chef's-kiss "perfect", royal head pat, side-eye, nervous sweat and the scuba dance. While emoting the buddy gets a detailed cartoon look (eyes with lids and irises, brows, nose, mouths, blush, white gloves, sneakers and props) in every look, including 3D. Esc closes the tray.
-
-- **Designer-made hero costumes.** The seven hero costumes are now real illustrated outfits instead of tinted shapes: masks and cowls, winged helmet, star-and-stripe chest, gold faceplate with arc reactor, collar and amulet, chest emblems, belts, boots and shading. One art source (`renderer/costumes.js`) drives both the flat looks and the 3D look, where it is painted onto the body as a texture.
 
 - **Hero stunts are now real sequences** (flat looks and 3D): the web-slinger shoots a web to the far corner, swings across and lands, then shoots back; the thunder god's storm gathers, lightning strikes and he arrives in a shockwave, raises the hammer and leaves in a second bolt; the sorcerer opens a glowing portal, steps in and comes out of another one; the armored hero's suit assembles piece by piece (boots, gauntlets, faceplate, chest reactor), ignites its jets, flies across the sky and lands.
 
