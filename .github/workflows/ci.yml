@@ -48,6 +48,7 @@ jobs:
       - run: node test/install-hooks.test.js
       - run: node test/usage.test.js
       - run: node test/chat.test.js
+      - run: node test/pty.test.js
   e2e-linux:
     name: e2e-linux
     runs-on: ubuntu-latest

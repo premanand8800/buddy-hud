@@ -159,6 +159,24 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     await req('POST', '/__select/s1');
     await post({ session_id: 'found-1', hook_event_name: 'SessionEnd' });
 
+    // terminal helper: a session running under buddy-claude advertises its pty socket; replies are typed into it
+    if (process.platform !== 'win32') {
+      const ptyDir = path.join(home, '.buddy-hud', 'pty'); fs.mkdirSync(ptyDir, { recursive: true });
+      const sockPath = path.join(ptyDir, 'e2e.sock'); const got = [];
+      const srv = require('net').createServer((c) => c.on('data', (d) => got.push(d.toString()))).listen(sockPath);
+      await post({ session_id: 'pty1', cwd: '/tmp/pty1', hook_event_name: 'Stop', transcript_path: tr }, { 'X-Buddy-Pty': sockPath, 'X-Buddy-Pane': '', 'X-Buddy-Tmux': '' });
+      await req('POST', '/__select/pty1');
+      assert.ok((await state()).sessions.find((x) => x.id === 'pty1').canType, 'pty session can be typed into');
+      await new Promise((resolve, reject) => { const r = http.request({ host: '127.0.0.1', port: 47813, path: '/api/reply?t=tok123', method: 'POST', agent: false, headers: { 'Content-Type': 'application/json' } }, (res) => { res.resume(); res.on('end', resolve); }); r.on('error', reject); r.end(JSON.stringify({ sessionId: 'pty1', text: 'typed through the pty' })); });
+      await waitFor(async () => got.join('').includes('typed through the pty') && got.join('').includes('\r'), 'text + Enter reach the pty socket');
+      await waitFor(async () => ((await state()).chat.pending || []).some((p) => p.text === 'typed through the pty' && p.mode === 'delivered'), 'pty delivery is marked delivered');
+      // a socket outside ~/.buddy-hud/pty is ignored
+      await post({ session_id: 'pty2', cwd: '/tmp/pty2', hook_event_name: 'Stop', transcript_path: tr }, { 'X-Buddy-Pty': '/tmp/evil.sock' });
+      assert.ok(!(await state()).sessions.find((x) => x.id === 'pty2').canType, 'foreign socket paths are rejected');
+      srv.close(); await post({ session_id: 'pty1', hook_event_name: 'SessionEnd' }); await post({ session_id: 'pty2', hook_event_name: 'SessionEnd' });
+      await req('POST', '/__select/s1');
+    }
+
     // issue #1: one permission prompt = one alert; idle pings are quiet; real questions alert once per 30 s
     await post({ session_id: 'n1', cwd: '/tmp/n', hook_event_name: 'UserPromptSubmit', prompt: 'x' });
     const askCount = async () => (await state()).alertLog.filter((a) => a.startsWith('ask:')).length;
