@@ -47,6 +47,8 @@ const base = (p) => String(p).split(/[\\/]/).pop();
 
 let pet = { phase: null, dir: -1 };
 let lastUi = {};
+let lastSel = null;
+let chatTabSeen = '';
 let state = { sessions: [], perms: [], settings: {}, hooksInstalled: true };
 
 let selected = null;
@@ -104,6 +106,7 @@ function openTab(t) { if (drawer && tab === t) drawer = false; else { drawer = t
 function toggleDrawer() { openTab('details'); }
 document.querySelectorAll('.seg').forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
 $('btnSet').onclick = () => openTab('settings');
+$('btnChat').onclick = () => openTab('chat');
 $('btnCust').onclick = () => openTab('custom');
 
 $('btnQuit').onclick = () => hud.send('quit');
@@ -180,6 +183,7 @@ function render() {
   const cur0 = ss.find((x) => x.id === selected);
   if (needy && cur0 && !cur0.canReply && !state.perms.some((p) => p.sessionId === cur0.id)) selected = needy.id;
   const s = ss.find((x) => x.id === selected);
+  if (selected !== lastSel) { lastSel = selected; hud.send('select', selected); }
   const perms = state.perms;
   const a = actFor(s, perms);
   document.body.dataset.act = a.act;
@@ -262,7 +266,7 @@ function render() {
   $('drawer').dataset.tab = tab;
   document.querySelectorAll('#drawer [data-t]').forEach((el) => { el.hidden = el.dataset.t !== tab; });
   document.querySelectorAll('.seg').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
-  $('btnSet').classList.toggle('on', drawer && tab === 'settings'); $('btnCust').classList.toggle('on', drawer && tab === 'custom');
+  $('btnChat').classList.toggle('on', drawer && tab === 'chat'); $('btnSet').classList.toggle('on', drawer && tab === 'settings'); $('btnCust').classList.toggle('on', drawer && tab === 'custom');
   if (drawer) {
     $('optReply').checked = !!state.settings.replyMode;
     $('optScale').value = String(state.settings.scale || 1);
@@ -311,6 +315,33 @@ function render() {
     setHtml(ob, `<div class="h">😴 <span>Waiting for Claude Code…</span></div><div class="sub" style="font-family:inherit">Start <code>claude</code> in a terminal and I’ll wake up. New sessions only; restart any that were already running.</div>`);
   } else ob.hidden = true;
 
+  // session strip: every Claude Code session at a glance (shown when there is more than one)
+  const stat = (x) => (state.perms.some((p) => p.sessionId === x.id) || ['permission', 'waiting'].includes(x.status) ? 'needs' : ['thinking', 'tool'].includes(x.status) ? 'working' : x.status === 'done' ? 'done' : 'idle');
+  $('strip').hidden = ss.length < 2;
+  setHtml($('strip'), ss.map((x) => `<div class="sc ${stat(x)} ${x.id === selected ? 'on' : ''}" data-id="${esc(x.id)}" title="${esc(x.cwd)}"><i></i><b>${esc(x.project)}</b><button data-dismiss="${esc(x.id)}" title="Hide this session">✕</button></div>`).join(''));
+  $('strip').querySelectorAll('.sc').forEach((el) => (el.onclick = (e) => {
+    if (e.target.closest('[data-dismiss]')) { hud.send('dismiss', e.target.closest('[data-dismiss]').dataset.dismiss); return; }
+    selected = el.dataset.id; render();
+  }));
+
+  // chat: the live conversation of the selected session, in the buddy
+  if (drawer && tab === 'chat') {
+    const ch = state.chat && s && state.chat.id === s.id ? state.chat : null;
+    const sttTxt = !s ? '' : (stat(s) === 'working' ? '💭 working…' : stat(s) === 'needs' ? '🙋 needs you' : stat(s) === 'done' ? '💬 finished' : '😴 idle');
+    setHtml($('chathead'), s ? `<span class="nm">${esc(s.project)}</span><span class="stt">${sttTxt}</span><span class="grow"></span><label title="While on, Claude waits for your reply at the end of each turn so you can answer from here (the terminal shows “hook running”)."><input type="checkbox" id="chatLive" ${state.settings.replyMode ? 'checked' : ''}> Live chat</label>` : '<span class="stt">No session selected</span>');
+    if ($('chatLive')) $('chatLive').onchange = (e) => hud.send('set', { replyMode: e.target.checked });
+    const log = $('chatlog');
+    const near = log.scrollHeight - log.scrollTop - log.clientHeight < 70 || chatTabSeen !== (s && s.id);
+    const msgs = ch ? ch.msgs.slice(-40) : [];
+    const pend = ch ? ch.pending : [];
+    const html = msgs.map((m) => m.role === 'user'
+      ? `<div class="cm user">${esc(m.text)}</div>`
+      : `<div class="cm asst">${m.text ? md(m.text) : ''}${m.tools.length ? `<div class="tl">${m.tools.map((t) => `<span>${esc(t.name)}${t.text ? ' · ' + esc(t.text) : ''}</span>`).join('')}</div>` : ''}</div>`).join('')
+      + pend.map((p) => `<div class="cm user pend">${esc(p.text)}<small>${p.mode === 'queued' ? '⏳ waiting for Claude’s next step (not delivered yet)' : '✓ sent to Claude'}</small></div>`).join('');
+    setHtml(log, html || `<div class="empty">${s ? 'No messages yet in this session.' : 'Start Claude Code and it will show up here.'}</div>`);
+    if (near) { log.scrollTop = log.scrollHeight; chatTabSeen = s && s.id; }
+  }
+
   // reply bubble (auto when Claude waits, or in drawer)
   const can = s && s.canReply;
   const idle = s && s.status === 'done';
@@ -343,7 +374,7 @@ new ResizeObserver(fit).observe($('stage'));
 
 hud.onState((s) => { state = s; if (s.pet) pet = s.pet; render(); });
 window.__push = (s) => { state = s; render(); };
-window.__ui = (o) => { if (o.tab) tab = o.tab; if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
+window.__ui = (o) => { if (o.sel) { const f = state.sessions.find((x) => x.id.startsWith(o.sel)); if (f) selected = f.id; } if (o.tab) tab = o.tab; if (o.log) console.log('DBG', JSON.stringify({ act: $('clawd').dataset.act, torso: document.querySelector('#clawd .torso').getBoundingClientRect(), mascot: $('mascot').getBoundingClientRect(), dpr: devicePixelRatio, iw: innerWidth, ih: innerHeight, zoom: getComputedStyle(document.documentElement).zoom })); if (o.pet) pet = o.pet; if (o.set) hud.send('set', o.set); if ('drawer' in o) drawer = o.drawer; render(); if (o.click) { const el = document.querySelector(o.click); if (el) el.click(); } };
 setInterval(render, 1500);
 render();
 

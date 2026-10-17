@@ -13,13 +13,19 @@
     <div id="drawer" class="bubble" data-tab="details" hidden>
       <div id="dhead">
         <div class="segs">
-          <button data-tab="details" class="seg on">📋 Details</button>
-          <button data-tab="settings" class="seg">⚙️ Settings</button>
-          <button data-tab="custom" class="seg">🎨 Customize</button>
+          <button data-tab="chat" class="seg" title="Chat">💬<span class="l"> Chat</span></button>
+          <button data-tab="details" class="seg on" title="Details">📋<span class="l"> Details</span></button>
+          <button data-tab="settings" class="seg" title="Settings">⚙️<span class="l"> Settings</span></button>
+          <button data-tab="custom" class="seg" title="Customize">🎨<span class="l"> Customize</span></button>
         </div>
         <span class="grow"></span>
         <button id="btnClose" title="Close (Esc)">✕</button>
       </div>
+
+      <section data-t="chat" class="chatsec">
+        <div id="chathead"></div>
+        <div id="chatlog"></div>
+      </section>
 
       <section data-t="details">
         <div id="health"></div>
@@ -82,8 +88,9 @@
     </div>
   </div>
 
+  <div id="strip" hidden></div>
   <div id="dock">
-    <div id="dockBtns"><button id="btnSet" title="Settings">⚙️</button><button id="btnCust" title="Customize">🎨</button></div>
+    <div id="dockBtns"><button id="btnChat" title="Chat with Claude">💬</button><button id="btnSet" title="Settings">⚙️</button><button id="btnCust" title="Customize">🎨</button></div>
     <button id="pill" title="details">
       <svg class="arc" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="track"/><circle cx="18" cy="18" r="15" class="fill" id="arc" pathLength="100"/></svg>
       <i id="hdot"></i><span class="pt"><b id="pillPct">0%</b><small id="pillSub">idle</small></span>
