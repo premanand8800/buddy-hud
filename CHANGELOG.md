@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.12.0
+
+- **Emotes** (🎭 button beside 💬 ⚙️ 🎨): a tray of 14 animated meme gestures: nope finger-wag, point, finger guns, dab, shrug, vibe with headphones, facepalm, shh, scheming, chef's-kiss "perfect", royal head pat, side-eye, nervous sweat and the scuba dance. While emoting the buddy gets a detailed cartoon look (eyes with lids and irises, brows, nose, mouths, blush, white gloves, sneakers and props) in every look, including 3D. Esc closes the tray.
 
 - **Designer-made hero costumes.** The seven hero costumes are now real illustrated outfits instead of tinted shapes: masks and cowls, winged helmet, star-and-stripe chest, gold faceplate with arc reactor, collar and amulet, chest emblems, belts, boots and shading. One art source (`renderer/costumes.js`) drives both the flat looks and the 3D look, where it is painted onto the body as a texture.
 

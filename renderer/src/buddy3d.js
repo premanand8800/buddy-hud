@@ -3,6 +3,7 @@
 // Contract: window.__buddy3d = { ok, update({ act, eyes, item, dir, color, color2 }) }
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { EMOTE_FACE } from './emoteface.js';
 
 const host = document.getElementById('mascot');
 let renderer;
@@ -153,6 +154,117 @@ if (renderer) {
   const mask = new THREE.Group(); mask.visible = false; face.add(mask);
   for (const x of [29, 131]) { const [px, py] = P(x, 50); const l = box(0.4, 0.2, 0.05, new THREE.MeshBasicMaterial({ color: 0xffffff }), 0.05); l.position.set(px, py, 0.05); l.rotation.z = (x < 80 ? -1 : 1) * 0.22; mask.add(l); }
 
+  // ---------- emotes (🎭 tray): the flat look's detailed face as a decal, plus white gloves, sneakers and props ----------
+  // The decal covers the artwork box x -40..200, y -60..124 so the sparks, notes and drops around the body show too.
+  const DX0 = -40, DY0 = -60, DW = 240, DH = 184, DPX = 4;
+  const decalMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
+  const decal = new THREE.Mesh(new THREE.PlaneGeometry(DW * S, DH * S), decalMat);
+  { const [x, y] = P(DX0 + DW / 2, DY0 + DH / 2); decal.position.set(x, y, 0.002); }
+  decal.visible = false; face.add(decal);
+  const decals = new Map(); // emote id + lid colour -> texture
+  const paintFace = (ops, lid) => {
+    const cv = document.createElement('canvas'); cv.width = DW * DPX; cv.height = DH * DPX;
+    const c = cv.getContext('2d');
+    for (const o of ops) {
+      const m = o.m || [1, 0, 0, 1, 0, 0];
+      c.setTransform(DPX, 0, 0, DPX, -DX0 * DPX, -DY0 * DPX); c.transform(...m);
+      const p = new Path2D();
+      if (o.k === 'p') p.addPath(new Path2D(o.d));
+      else if (o.k === 'e') p.ellipse(o.g[0], o.g[1], o.g[2], o.g[3], 0, 0, Math.PI * 2);
+      else p.roundRect(o.g[0], o.g[1], o.g[2], o.g[3], o.g[4]);
+      c.globalAlpha = o.o == null ? 1 : o.o;
+      if (o.f) { c.fillStyle = o.f === 'LIDF' ? lid : o.f; c.fill(p); }
+      if (o.s) { c.strokeStyle = o.s; c.lineWidth = o.w; c.lineCap = o.lc || 'butt'; c.lineJoin = o.lj || 'miter'; c.setLineDash(o.da || []); c.stroke(p); }
+    }
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+    return tex;
+  };
+  const lidCol = new THREE.Color();
+  const showDecal = (id) => {
+    const ops = EMOTE_FACE[id];
+    if (!ops) { decal.visible = false; return; }
+    lidCol.copy(bodyMat.color).multiplyScalar(0.88);
+    const lid = '#' + lidCol.getHexString(THREE.SRGBColorSpace), key = id + lid;
+    if (!decals.has(key)) { if (decals.size >= 6) { for (const t of decals.values()) t.dispose(); decals.clear(); } decals.set(key, paintFace(ops, lid)); }
+    if (decalMat.map !== decals.get(key)) { decalMat.map = decals.get(key); decalMat.needsUpdate = true; }
+    decal.visible = true;
+  };
+
+  const gloveMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, emissive: 0xffffff, emissiveIntensity: 0.08 });
+  const gloveShade = new THREE.MeshStandardMaterial({ color: 0xd9d3e6, roughness: 0.6 });
+  // One glove per shape, hung below the hand block (local -y points down the arm, +z out of the body front).
+  // side: +1 right hand, -1 left; the thumb sits toward local +x*side, which is "up" when the arm points outward.
+  const mkGlove = (kind, side) => {
+    const g = new THREE.Group(); g.visible = false;
+    const cuff = box(0.27, 0.08, 0.46, gloveMat, 0.035); cuff.position.y = -0.36; g.add(cuff);
+    const band = box(0.28, 0.02, 0.47, gloveShade, 0.01); band.position.y = -0.345; g.add(band);
+    const palm = box(0.28, 0.24, 0.32, gloveMat, 0.1); palm.position.y = -0.52; g.add(palm);
+    const fing = (x, y, z, h, rz = 0, rx = 0, w = 0.075) => { const f = box(w, h, w, gloveMat, w / 2); f.geometry.translate(0, -h / 2, 0); f.position.set(x, y, z); f.rotation.set(rx, 0, rz); g.add(f); return f; };
+    if (kind === 'index' || kind === 'gun') {
+      fing(0.03 * side, -0.62, 0.06, 0.24);
+      if (kind === 'gun') fing(0.13 * side, -0.48, 0.04, 0.16, side * 2.4); // thumb cocked up
+      else fing(0.13 * side, -0.5, 0.08, 0.1, side * 0.6);
+    } else if (kind === 'palm') {
+      [-0.1, -0.035, 0.035, 0.1].forEach((x, i) => fing(x * side, -0.62, 0, [0.15, 0.19, 0.18, 0.13][i], side * x * 0.9, 0, 0.065));
+      fing(0.15 * side, -0.48, 0.03, 0.13, side * 1.1, 0, 0.07);
+    } else if (kind === 'ok') {
+      [0.0, 0.07, 0.13].forEach((x, i) => fing(x * side, -0.62, 0, [0.17, 0.16, 0.12][i], side * x, 0, 0.065));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.032, 8, 18), gloveMat); ring.position.set(-0.1 * side, -0.68, 0.06); ring.rotation.y = 0.4; g.add(ring);
+    } else if (kind === 'pinch') {
+      for (const [x, rz] of [[-0.06, 0.25], [0, 0], [0.06, -0.25]]) fing(x * side, -0.6, 0.02, 0.17, rz * side, 0, 0.07);
+      fing(0.13 * side, -0.52, 0.06, 0.14, side * 0.5, 0.3, 0.07);
+    } else { // fist
+      const knuck = box(0.26, 0.08, 0.26, gloveMat, 0.04); knuck.position.set(0, -0.66, 0.02); g.add(knuck);
+    }
+    return g;
+  };
+  const GLOVES = ['index', 'gun', 'palm', 'ok', 'pinch', 'fist'];
+  const glovesR = {}, glovesL = {};
+  for (const kd of GLOVES) { handR.add(glovesR[kd] = mkGlove(kd, 1)); handL.add(glovesL[kd] = mkGlove(kd, -1)); }
+  // which glove each emote wears on the right / left hand (the 3D poses pick their own hands)
+  const EMO_GLOVE = {
+    nope: ['index', 'fist'], point: ['index', 'fist'], guns: ['gun', 'gun'], dab: ['palm', 'palm'], shrug: ['palm', 'palm'], vibe: ['palm', 'palm'],
+    facepalm: ['palm', 'fist'], shh: ['index', 'fist'], scheme: ['pinch', 'pinch'], perfect: ['ok', 'fist'], pat: ['palm', 'fist'],
+    sideeye: ['fist', 'fist'], sweat: ['palm', 'fist'], scuba: ['palm', 'palm'],
+  };
+  const shoeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+  const soleMat = new THREE.MeshStandardMaterial({ color: 0xff8a3d, roughness: 0.6 });
+  const shoes = legs.map((l) => {
+    const s = new THREE.Group(); s.visible = false;
+    const up = box(0.23, 0.13, 0.38, shoeMat, 0.05); up.position.set(0, -0.43, 0.05); s.add(up);
+    const toe = box(0.22, 0.08, 0.12, gloveShade, 0.035); toe.position.set(0, -0.44, 0.22); s.add(toe);
+    const lace = box(0.16, 0.025, 0.04, soleMat, 0.01); lace.position.set(0, -0.36, 0.12); lace.rotation.x = -0.4; s.add(lace);
+    const sole = box(0.25, 0.04, 0.42, soleMat, 0.015); sole.position.set(0, -0.5, 0.05); s.add(sole);
+    l.add(s); return s;
+  });
+  const phones = new THREE.Group(); phones.visible = false; body.add(phones);
+  { const pm = new THREE.MeshStandardMaterial({ color: 0x2b2733, roughness: 0.5 }), cm = new THREE.MeshStandardMaterial({ color: 0xff5d8f, roughness: 0.45 });
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.045, 8, 32, Math.PI), pm); arc.position.y = 0.62; arc.scale.y = 0.72; phones.add(arc);
+    for (const sx of [-1, 1]) { const cup = box(0.14, 0.36, 0.36, cm, 0.06); cup.position.set(sx * 0.86, 0.6, 0); phones.add(cup); const pad = box(0.04, 0.26, 0.26, pm, 0.02); pad.position.set(sx * 0.94, 0.6, 0); phones.add(pad); } }
+  const crown = new THREE.Group(); crown.visible = false; crown.position.set(0, 1.2, 0); body.add(crown);
+  { const gm = new THREE.MeshStandardMaterial({ color: 0xffcc33, roughness: 0.3, metalness: 0.55, emissive: 0x6a4a00, emissiveIntensity: 0.3 });
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.27, 0.12, 24, 1, true), gm); ring.material.side = THREE.DoubleSide; crown.add(ring);
+    for (let i = 0; i < 5; i++) { const an = i / 5 * Math.PI * 2, sp = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 4), gm); sp.position.set(Math.sin(an) * 0.28, 0.13, Math.cos(an) * 0.28); crown.add(sp); }
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.045), new THREE.MeshStandardMaterial({ color: 0xff4d6d, roughness: 0.2, metalness: 0.2 })); gem.position.set(0, 0, 0.29); crown.add(gem); }
+  const snorkel = new THREE.Group(); snorkel.visible = false; body.add(snorkel);
+  { const sm = new THREE.MeshStandardMaterial({ color: 0xff8a3d, roughness: 0.45 }), wm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+    const z = D / 2 + 0.06, [mx, my] = P(94, 86);
+    const hor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.88 - mx, 10), sm); hor.rotation.z = Math.PI / 2; hor.position.set((mx + 0.88) / 2, my, z); snorkel.add(hor);
+    const ver = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.15, 10), sm); ver.position.set(0.88, my + 0.575, z); snorkel.add(ver);
+    for (const y of [0.55, 0.85]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.08, 10), wm); b.position.set(0.88, y, z); snorkel.add(b); }
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.1, 10), sm); cap.position.set(0.88, my + 1.17, z); snorkel.add(cap); }
+  const towel = new THREE.Group(); towel.visible = false; towel.position.set(0, -0.6, 0.24); towel.rotation.x = 1.5; handR.add(towel); // stands up while the hand is raised
+  { const tm = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.9, side: THREE.DoubleSide }), bm = new THREE.MeshStandardMaterial({ color: 0x7cc8ff, roughness: 0.9 });
+    const cl = box(0.5, 0.36, 0.04, tm, 0.02); cl.rotation.z = 0.25; towel.add(cl);
+    for (const y of [-0.06, 0.07]) { const st2 = box(0.5, 0.035, 0.045, bm, 0.01); st2.position.y = y; cl.add(st2); } }
+  const showEmote = (id) => {
+    const on = !!id, gl = EMO_GLOVE[id] || [];
+    if (on) showDecal(id); else decal.visible = false;
+    for (const kd of GLOVES) { glovesR[kd].visible = on && gl[0] === kd; glovesL[kd].visible = on && gl[1] === kd; }
+    for (const s of shoes) s.visible = on;
+    phones.visible = id === 'vibe'; crown.visible = id === 'pat'; snorkel.visible = id === 'scuba'; towel.visible = id === 'sweat';
+  };
+
   // keyframe helper: p in 0..1, frames [[p, v], ...] (linear)
   const kf = (p, fr) => { if (p <= fr[0][0]) return fr[0][1]; for (let i = 1; i < fr.length; i++) if (p <= fr[i][0]) { const [a, va] = fr[i - 1], [b, vb] = fr[i]; return va + (vb - va) * ((p - a) / (b - a || 1)); } return fr[fr.length - 1][1]; };
   // world-space effects for the new stunts
@@ -202,7 +314,7 @@ if (renderer) {
 
   const ease = (cur, target, k) => cur + (target - cur) * k;
   const clock = () => (window.__vnow ? window.__vnow() : performance.now()); // promo recorder supplies virtual time
-  let yaw = 0, last = 0, t0 = clock();
+  let yaw = 0, last = 0, t0 = clock(), shownEmote = '';
 
   // A timer, not requestAnimationFrame: rAF keeps the compositor redrawing the transparent window at 60 Hz
   // even on frames we skip. 8 fps when calm, 30 fps when moving.
@@ -329,6 +441,52 @@ if (renderer) {
         handHi(); legSwing = 0;
         break;
       }
+      // emotes (🎭 tray): the flat look's poses, as arm swings
+      case 'emote-nope': // hand up by the face, wagging, swaying side to side
+        rPX = 0.75; rPY = 1.2; rRotZ = 0.25 + Math.sin(t * 14) * 0.35; roll = Math.sin(t * 3.9) * 0.06; targetYaw = Math.sin(t * 3.9) * 0.3;
+        break;
+      case 'emote-point':
+        rRotZ = 0.9; rRotX = -1.25 + Math.sin(t * 14) * 0.12; rPosZ = 0.2; targetYaw = -0.1;
+        break;
+      case 'emote-guns':
+        rRotZ = 1.57; lRotZ = -1.57; rRotX = -0.5 - (t % 0.6 < 0.1 ? 0.4 : 0); lRotX = -0.5 - ((t + 0.3) % 0.6 < 0.1 ? 0.4 : 0);
+        break;
+      case 'emote-dab':
+        rRotZ = 2.4; lRotZ = -0.6; lRotX = -1.3; lPosZ = 0.4; roll = -0.15; pitch = 0.12;
+        break;
+      case 'emote-shrug':
+        rRotZ = 1.0; lRotZ = -1.0; hop = Math.max(0, Math.sin(t * 4.8)) * 0.05;
+        break;
+      case 'emote-vibe':
+        roll = Math.sin(t * 7) * 0.12; targetYaw = Math.sin(t * 7) * 0.25; rRotZ = 2.6 + Math.sin(t * 7) * 0.3; lRotZ = -2.6 - Math.sin(t * 7 + 1.5) * 0.3;
+        break;
+      case 'emote-facepalm':
+        rPX = 0.25; rPY = 0.75; rPosZ = 0.55; rRotX = -1.4; pitch = 0.15; by = -0.04;
+        break;
+      case 'emote-shh':
+        rPX = 0.1; rPY = 0.45; rPosZ = 0.55; rRotX = -1.5; targetYaw = 0.1; roll = Math.sin(t * 2) * 0.03;
+        break;
+      case 'emote-scheme':
+        rPX = 0.2; rPY = 0.4; rPosZ = 0.5; lPX = -0.2; lPY = 0.4; lPosZ = 0.5; rRotX = -1.4 + Math.sin(t * 22) * 0.12; lRotX = -1.4 + Math.sin(t * 22 + 1.6) * 0.12; pitch = 0.1;
+        break;
+      case 'emote-perfect':
+        rPX = 0.7; rPY = 1.0; rRotZ = 0.6 + Math.sin(t * 12) * 0.1; rRotX = -0.4;
+        break;
+      case 'emote-pat':
+        rPX = 0.8; rPY = 0.82; rRotZ = -2.7 + Math.abs(Math.sin(t * 10)) * 0.12; rRotX = -0.15; roll = -0.05; targetYaw = -0.3;
+        break;
+      case 'emote-sideeye':
+        targetYaw = 0.45; eyeX = 0.06; by = 0;
+        break;
+      case 'emote-sweat':
+        rPX = 0.3 + Math.sin(t * 12) * 0.25; rPY = 1.05; rPosZ = 0.45; rRotX = -1.5; eyeY = 0.03;
+        break;
+      case 'emote-scuba': {
+        const w = t * 7;
+        roll = Math.sin(w) * 0.12; targetYaw = Math.sin(w) * 0.4; hop = Math.abs(Math.sin(w)) * 0.08;
+        rRotZ = 1.3 + Math.sin(w) * 1.3; lRotZ = -1.3 + Math.sin(w) * 1.3; legSwing = Math.sin(w * 2) * 0.4;
+        break;
+      }
       default: // idle / asleep: still, slightly turned so the depth reads
         by = -0.01; targetYaw = 0.22; pitch = 0.05;
     }
@@ -358,14 +516,17 @@ if (renderer) {
     if (cs && cs.cape) cape.rotation.x = 0.12 + Math.sin(t * (st.costume === 'superman' ? 9 : 2.5)) * 0.1;
     canoe.visible = showCanoe; canoe.rotation.z = showCanoe ? Math.sin(t * 1.9 * 0.5) * 0.03 : 0;
     keyboard.visible = showKb; book.visible = showBook; lens.visible = showLens;
-    sun.visible = st.shades === 'sunglasses'; gog.visible = st.shades === 'goggles';
+    sun.visible = st.shades === 'sunglasses' && a !== 'emote-scuba'; gog.visible = st.shades === 'goggles' || a === 'emote-scuba';
     const free = ['idle', 'sit', 'look', 'walk'].includes(a);
     mug.visible = st.coffee && free;
     if (mug.visible && a !== 'walk') { const ph = (t % 7) / 7; if (ph > 0.58 && ph < 0.82) { const k2 = Math.sin((ph - 0.58) / 0.24 * Math.PI); handR.rotation.z = 1.1 * k2; handR.rotation.x = -1.3 * k2; } }
     book.position.y = 1.62 + Math.sin(t * 2) * 0.03;
 
-    // eyes: expression + blink + gaze
-    for (const [n, g] of Object.entries(eyes)) g.visible = n === st.eyes && st.shades !== 'sunglasses' && !['spider', 'iron', 'batman'].includes(st.costume);
+    // eyes: expression + blink + gaze (an emote's decal brings its own eyes)
+    const emo = a.startsWith('emote-') ? a.slice(6) : '';
+    if (emo !== shownEmote) { shownEmote = emo; showEmote(emo); }
+    if (emo) sun.visible = false;
+    for (const [n, g] of Object.entries(eyes)) g.visible = !emo && n === st.eyes && st.shades !== 'sunglasses' && !['spider', 'iron', 'batman'].includes(st.costume);
     const blink = (t % 3.4) > 3.25 ? 0.1 : 1;
     for (const e of openEyes.concat(wideEyes)) e.scale.y = blink;
     face.position.x = ease(face.position.x, eyeX, k); face.position.y = ease(face.position.y, eyeY, k);
@@ -381,6 +542,7 @@ if (renderer) {
       if (o.act) st.act = o.act;
       if (o.eyes && eyes[o.eyes]) st.eyes = o.eyes;
       if (o.dir) st.dir = o.dir > 0 ? 1 : -1;
+      if (o.color || 'costume' in o) shownEmote = null; // repaint the emote decal's lids in the new body colour
       if (o.color) { col.set(o.color); if (st.costume === 'none') { bodyMat.color.copy(col); bodyMat.emissive.copy(col); handMat.emissive.copy(col); legMat.color.copy(col); legMat.emissive.copy(col); } }
       if (o.color2) col2.set(o.color2);
       if ('costume' in o) {
