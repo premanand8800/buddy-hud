@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1
+
+- **Compact layout** by @Samir-kumal: the buddy now hugs the right edge in a narrow column. The 💬 ⚙️ 🎨 buttons stack beside the buddy, the usage pill sits under it on one line, session chips stack vertically and the selected one carries the model name. Shown even with a single session.
+
 ## 0.10.0
 
 - **Chat with an idle Claude Code session from the buddy, on macOS and Linux, without tmux** (reported: a message sent from the chat to an idle terminal session was never delivered). New terminal helper `buddy-claude`: start Claude Code through it instead of `claude` (same arguments) and the buddy can type your message into that exact session, as if you had typed it. It is a small Python launcher that runs Claude Code in a pseudo-terminal and exposes an owner-only socket. One-click install and a "Copy alias" button in Settings → Terminal helper. Existing hooks are upgraded automatically so sessions can announce the helper.
