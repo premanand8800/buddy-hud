@@ -67,9 +67,12 @@ Claude Code [hooks](https://docs.claude.com/en/docs/claude-code/hooks) POST each
 
 ## Replying
 
-- **Claude is working:** your message is queued and handed to Claude at its next step.
+Messages you type in the buddy's Chat tab reach Claude Code like this:
+
+- **Claude is working:** your message is handed to Claude at its next step.
+- **Claude runs through the terminal helper (macOS and Linux, recommended):** start Claude Code with `~/.buddy-hud/bin/buddy-claude` instead of `claude` (Settings → Terminal helper installs it and copies a shell alias, `alias claude='~/.buddy-hud/bin/buddy-claude'`). The buddy then types your message into that session even while it is idle. It is a thin pass-through: you type and see exactly what you normally would, and the only extra is a private, owner-only socket in `~/.buddy-hud/pty/`.
 - **Claude is idle, inside tmux:** the text is typed straight into the pane.
-- **Claude is idle, elsewhere:** the message is queued until Claude's next step. Start the next turn in the terminal.
+- **Claude is idle, plain terminal:** the message waits until your next turn, and the chat says so ("not delivered yet").
 - **Live chat (experimental):** turn it on in the Chat tab or Settings. While that session's chat panel is open, Claude pauses at the end of a turn (at most a minute) so your reply goes straight in. The terminal shows "running stop hooks" during the pause; closing the panel releases it.
 
 ## Platform notes

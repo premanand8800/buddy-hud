@@ -144,6 +144,7 @@ function getSession(id, ev) {
   }
   if (ev.cwd) { s.cwd = ev.cwd; s.project = path.basename(ev.cwd) || s.project; }
   if (ev.transcript_path) s.transcript = ev.transcript_path;
+  if (ev.hud && ev.hud.pty) { const base = path.join(os.homedir(), '.buddy-hud', 'pty') + path.sep, p = path.resolve(ev.hud.pty); if (p.startsWith(base) && p.endsWith('.sock')) s.pty = p; }
   if (ev.hud && ev.hud.pane) s.tmux = { socket: ev.hud.tmux.split(',')[0], pane: ev.hud.pane };
   s.updated = Date.now();
   return s;
@@ -394,6 +395,17 @@ function typeIntoPane(s, text, cb) {
   });
 }
 
+function typeViaPty(sock, text, cb) {
+  const c = require('net').createConnection(sock);
+  let done = false; const fin = (ok) => { if (!done) { done = true; try { c.destroy(); } catch {} cb(ok); } };
+  c.on('error', () => fin(false));
+  c.on('connect', () => {
+    c.write(String(text).replace(/\r?\n+/g, ' '));
+    setTimeout(() => { c.write('\r', () => setTimeout(() => fin(true), 50)); }, 150); // Enter as a separate keystroke, like a person typing
+  });
+  setTimeout(() => fin(false), 3000);
+}
+
 function takeQueued(id, evName) {
   const q = queued.get(id);
   if (!q || !q.length) return null;
@@ -464,6 +476,8 @@ function handleHook(req, res, body) {
       : req.url;
     const hdr = (k) => { const v = String(req.headers[k] || ''); return v.startsWith('$') ? '' : v; };
     if (hdr('x-buddy-pane')) ev.hud = { tmux: hdr('x-buddy-tmux'), pane: hdr('x-buddy-pane') };
+    const ptySock = hdr('x-buddy-pty');
+    if (ptySock) { ev.hud = { ...(ev.hud || {}), pty: ptySock }; }
     const id = ev.session_id || 'unknown';
     const extra = handleEvent(ev);
 
@@ -562,9 +576,9 @@ function runSelfTest() {
 
 function snapshot() {
   return {
-    update, updateStatus, ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
+    helper: { installed: fs.existsSync(HELPER), path: HELPER, supported: process.platform !== 'win32' }, update, updateStatus, ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
     sessions: [...sessions.values()].sort((a, b) => b.updated - a.updated).map((s) => ({
-      ...s, _usageState: undefined, _chatState: undefined, _usage: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!s.tmux, queued: (queued.get(s.id) || []).length,
+      ...s, _usageState: undefined, _chatState: undefined, _usage: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!(s.tmux || s.pty), queued: (queued.get(s.id) || []).length,
     })),
     chat: (() => { const s = sessions.get(selectedId); if (!s) return null; const msgs = chatMessages(s).slice(-60); const lastUser = [...msgs].reverse().find((x) => x.role === 'user'); const now = Date.now(); s.pending = (s.pending || []).filter((p) => now - p.t < 15 * 60 * 1000 && !msgs.some((x) => x.role === 'user' && x.ts >= p.t - 5000 && x.text.includes(p.text.slice(0, 60)))); return { id: s.id, msgs, pending: s.pending }; })(),
     perms: [...pendingPerms.entries()].map(([id, p]) => ({ id, sessionId: p.sessionId, tool: p.tool, emoji: p.emoji, summary: p.summary, diff: p.diff, t: p.t })),
@@ -668,6 +682,14 @@ function sendReply(sessionId, text) {
     note('delivered');
     const s = sessions.get(sessionId);
     if (s) { s.status = 'thinking'; pushFeed(s, { emoji: '📨', text: clip(text, 120), kind: 'prompt' }); }
+  } else if (sessions.get(sessionId) && sessions.get(sessionId).pty && ['done', 'idle'].includes(sessions.get(sessionId).status)) {
+    // Claude Code runs under buddy-claude: write the text into its pseudo-terminal like keystrokes
+    const s = sessions.get(sessionId);
+    typeViaPty(s.pty, text, (ok) => {
+      if (ok) { note('delivered'); s.status = 'thinking'; pushFeed(s, { emoji: '📨', text: clip(text, 120), kind: 'prompt' }); }
+      else { s.pty = null; const q = queued.get(sessionId) || []; q.push(text); queued.set(sessionId, q); note('queued'); pushFeed(s, { emoji: '📬', text: 'terminal helper is not running any more, queued instead: ' + clip(text, 80), kind: 'prompt' }); }
+      emit();
+    });
   } else if (sessions.get(sessionId) && sessions.get(sessionId).tmux && ['done', 'idle'].includes(sessions.get(sessionId).status)) {
     // Claude idle at its prompt inside tmux: type the reply straight into the pane
     const s = sessions.get(sessionId);
@@ -784,6 +806,16 @@ ipcMain.on('dismiss', (_e, id) => { const s = sessions.get(id); if (!s) return; 
 ipcMain.on('checkUpdate', () => checkUpdate(true));
 ipcMain.on('openUpdate', (_e, which) => { const u = update && (which === 'download' && update.download ? update.download : update.page); if (u && /^https:\/\/github\.com\/premanand8800\/buddy-hud\//.test(u)) shell.openExternal(u); });
 ipcMain.on('dismissUpdate', () => { if (update) { settings.dismissedUpdate = update.version; saveSettings(); emit(); } });
+const HELPER = path.join(os.homedir(), '.buddy-hud', 'bin', 'buddy-claude');
+ipcMain.on('installHelper', () => {
+  try {
+    fs.mkdirSync(path.dirname(HELPER), { recursive: true });
+    fs.writeFileSync(HELPER, fs.readFileSync(path.join(__dirname, 'bin', 'buddy-claude')));
+    fs.chmodSync(HELPER, 0o755);
+    toast('Buddy HUD', 'Terminal helper installed. Start Claude with: ' + HELPER);
+  } catch (e) { toast('Buddy HUD', 'Could not install the helper: ' + e.message); }
+  emit();
+});
 ipcMain.on('seen', () => { lastSeenAt = Date.now(); });
 ipcMain.on('selfTest', () => runSelfTest());
 ipcMain.on('set', (_e, patch) => {
@@ -969,6 +1001,7 @@ app.whenReady().then(async () => {
   // Security fix: replace Windows hooks from older versions (cmd /c ran hook payloads as commands under Git Bash)
   try {
     const ih = require('./install-hooks');
+    if (ih.hasOutdatedHooks()) { ih.run(false); hooksCache.t = 0; }
     if (process.platform === 'win32' && ih.hasUnsafeWindowsHook()) { ih.run(false); hooksCache.t = 0; toast('Buddy HUD', 'Updated your Claude Code hooks to a safer Windows command. Restart running Claude sessions.'); }
   } catch (e) { console.error('hook migration failed:', e); }
   const firstRun = !TEST && !fs.existsSync(SETTINGS_FILE);

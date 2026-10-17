@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""buddy-claude: run Claude Code inside a pseudo-terminal that Buddy HUD can type into.
+
+Use it exactly like `claude` (same arguments). Everything you type and see passes straight through; the only
+extra is a private unix socket (~/.buddy-hud/pty/<pid>.sock, owner-only) that lets Buddy HUD send text to Claude
+as if you had typed it, so you can chat from the buddy even when this terminal is idle. macOS and Linux.
+"""
+import fcntl, os, select, shutil, signal, socket, struct, sys, termios, tty
+
+claude = os.environ.get("BUDDY_CLAUDE_BIN") or shutil.which("claude")
+if not claude:
+    sys.exit("buddy-claude: could not find `claude` on PATH (set BUDDY_CLAUDE_BIN to override)")
+
+sock_dir = os.path.expanduser("~/.buddy-hud/pty")
+os.makedirs(sock_dir, mode=0o700, exist_ok=True)
+os.chmod(sock_dir, 0o700)
+sock_path = os.path.join(sock_dir, f"{os.getpid()}.sock")
+try:
+    os.unlink(sock_path)
+except FileNotFoundError:
+    pass
+srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+srv.bind(sock_path)
+os.chmod(sock_path, 0o600)
+srv.listen(4)
+
+import pty
+env = dict(os.environ, BUDDY_PTY_SOCK=sock_path)
+pid, master = pty.fork()
+if pid == 0:
+    os.execvpe(claude, [claude] + sys.argv[1:], env)
+
+def winsize():
+    try:
+        return fcntl.ioctl(sys.stdin.fileno(), termios.TIOCGWINSZ, b"\0" * 8)
+    except Exception:
+        return struct.pack("HHHH", 24, 80, 0, 0)
+
+def sync_size(*_):
+    try:
+        fcntl.ioctl(master, termios.TIOCSWINSZ, winsize())
+        os.kill(pid, signal.SIGWINCH)
+    except Exception:
+        pass
+
+signal.signal(signal.SIGWINCH, sync_size)
+sync_size()
+
+interactive = sys.stdin.isatty()
+saved = termios.tcgetattr(sys.stdin.fileno()) if interactive else None
+if interactive:
+    tty.setraw(sys.stdin.fileno())
+
+def cleanup():
+    if interactive and saved is not None:
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, saved)
+    try:
+        srv.close()
+        os.unlink(sock_path)
+    except Exception:
+        pass
+
+status = 0
+clients = []
+try:
+    stdin_open = True
+    while True:
+        rl = [master, srv] + clients + ([sys.stdin.fileno()] if stdin_open else [])
+        try:
+            ready, _, _ = select.select(rl, [], [], 1.0)
+        except InterruptedError:
+            continue
+        except OSError:
+            ready = []
+        for fd in ready:
+            if fd == master:
+                try:
+                    data = os.read(master, 65536)
+                except OSError:
+                    data = b""
+                if not data:
+                    raise SystemExit
+                os.write(sys.stdout.fileno(), data)
+            elif fd == srv:
+                conn, _ = srv.accept()
+                conn.setblocking(False)
+                clients.append(conn)
+            elif fd == sys.stdin.fileno():
+                data = os.read(fd, 65536)
+                if not data:
+                    stdin_open = False
+                else:
+                    os.write(master, data)
+            else:  # a Buddy HUD client: its bytes are typed into Claude Code
+                try:
+                    data = fd.recv(65536)
+                except Exception:
+                    data = b""
+                if data:
+                    os.write(master, data)
+                else:
+                    clients.remove(fd)
+                    fd.close()
+        try:
+            done, st = os.waitpid(pid, os.WNOHANG)
+            if done:
+                status = os.waitstatus_to_exitcode(st)
+                break
+        except ChildProcessError:
+            break
+except SystemExit:
+    pass
+finally:
+    cleanup()
+sys.exit(status if status >= 0 else 1)

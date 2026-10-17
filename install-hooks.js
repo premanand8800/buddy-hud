@@ -18,7 +18,7 @@ const EVENTS = { SessionStart: 0, SessionEnd: 0, UserPromptSubmit: 0, PreToolUse
 // not running, curl exits non-zero and Claude Code shows a non-blocking hook error.
 const command = (long) => process.platform === 'win32'
   ? `curl.exe -s ${long ? '' : '-m 3 '}-X POST -H Content-Type:application/json --data-binary "@-" ${URL}`
-  : `curl -s ${long ? '' : '-m 3 '}-X POST -H "Content-Type: application/json" -H "X-Buddy-Tmux: \${TMUX:-}" -H "X-Buddy-Pane: \${TMUX_PANE:-}" --data-binary @- ${URL} || true`;
+  : `curl -s ${long ? '' : '-m 3 '}-X POST -H "Content-Type: application/json" -H "X-Buddy-Tmux: \${TMUX:-}" -H "X-Buddy-Pane: \${TMUX_PANE:-}" -H "X-Buddy-Pty: \${BUDDY_PTY_SOCK:-}" --data-binary @- ${URL} || true`;
 
 function readSettings() {
   if (!fs.existsSync(FILE)) return {};
@@ -55,5 +55,10 @@ function hasUnsafeWindowsHook() {
   try { return fs.readFileSync(FILE, 'utf8').includes('cmd /c \\"curl.exe'); } catch { return false; }
 }
 
-module.exports = { run, hasUnsafeWindowsHook };
+// Hooks from before the terminal helper existed do not forward BUDDY_PTY_SOCK; re-run the installer to add it.
+function hasOutdatedHooks() {
+  try { const t = fs.readFileSync(FILE, 'utf8'); return process.platform !== 'win32' && t.includes('X-Buddy-Tmux') && !t.includes('X-Buddy-Pty'); } catch { return false; }
+}
+
+module.exports = { run, hasUnsafeWindowsHook, hasOutdatedHooks };
 if (require.main === module) console.log(run(process.argv.includes('--uninstall')));

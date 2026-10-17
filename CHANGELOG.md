@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- **Chat with an idle Claude Code session from the buddy, on macOS and Linux, without tmux** (reported: a message sent from the chat to an idle terminal session was never delivered). New terminal helper `buddy-claude`: start Claude Code through it instead of `claude` (same arguments) and the buddy can type your message into that exact session, as if you had typed it. It is a small Python launcher that runs Claude Code in a pseudo-terminal and exposes an owner-only socket. One-click install and a "Copy alias" button in Settings → Terminal helper. Existing hooks are upgraded automatically so sessions can announce the helper.
+- The "not delivered yet" hint now points to the helper. Windows support needs a different mechanism and is not included.
+
 ## 0.9.0
 
 - **Update notifications.** Buddy HUD checks GitHub's public releases once at launch and every 12 hours (one request; switch it off in Settings → Updates, or press "Check now"). When a newer version exists, a bubble offers **Download** (the installer for your OS), **Release notes** or **Later**, and a desktop notification appears once. This is a notifier, not a silent installer: true auto-update needs code-signed builds on macOS, which this project does not have yet.

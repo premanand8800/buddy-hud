@@ -130,6 +130,8 @@ $('optThink').onchange = (e) => hud.send('set', { thinkPose: e.target.value });
 $('optAura').onchange = (e) => hud.send('set', { aura: e.target.value });
 $('optUpd').onchange = (e) => hud.send('set', { checkUpdates: e.target.checked });
 $('btnUpdNow').onclick = () => hud.send('checkUpdate');
+$('btnHelper').onclick = () => hud.send('installHelper');
+$('btnAlias').onclick = () => navigator.clipboard.writeText(`alias claude='${(state.helper && state.helper.path) || '~/.buddy-hud/bin/buddy-claude'}'`).catch(() => {});
 $('optSkin').onchange = (e) => hud.send('set', { skin: e.target.value });
 $('optPhone').onchange = (e) => hud.send('phone', { enabled: e.target.checked });
 $('optPrivacy').onchange = (e) => hud.send('set', { privacy: e.target.checked });
@@ -297,6 +299,9 @@ function render() {
     setHtml($('lastmsg'), s && s.lastMsg ? `<div class="fh">💬 Claude’s last message</div><div class="say">${md(s.lastMsg)}</div>` : '');
     $('ctxNote').textContent = s ? `${fmt(s.ctx.max)} window for ${s.project}. ${s.ctx.why || ''}` : 'Detected automatically from the model Claude is using.';
     $('optShades').value = st0.shades || 'none'; $('optCoffee').checked = !!st0.coffee; $('optThink').value = st0.thinkPose || 'scratch'; $('optAura').value = st0.aura || 'off';
+    const hp = state.helper || {};
+    $('helperNote').textContent = !hp.supported ? 'Not available on Windows yet.' : hp.installed ? `Installed. Start Claude Code with ${hp.path} (or press "Copy alias", paste it in your shell profile, and keep typing \`claude\`). Sessions started that way can receive your chat messages even while idle.` : 'Lets you chat from the buddy with an idle Claude Code session on macOS and Linux, with no tmux. One click installs a tiny launcher you start Claude with.';
+    $('btnHelper').hidden = !hp.supported || hp.installed; $('btnAlias').hidden = !hp.supported || !hp.installed;
     $('optUpd').checked = st0.checkUpdates !== false; $('updStatus').textContent = state.updateStatus || '';
     $('optSkin').value = (state.settings && state.settings.skin) || 'bot';
     const ph = state.phone || {};
@@ -385,7 +390,8 @@ function render() {
   if (can) $('replyHint').textContent = '🟢 Claude is waiting — your reply goes straight into the session';
   else if (idle && s && s.canType) $('replyHint').textContent = '⌨️ Typed into your tmux pane';
   else if (wontDeliver) {
-    setHtml($('replyHint'), `⚠️ Claude is idle, and I can't type into this terminal. Your message <b>waits</b> until you start the next turn there.${state.settings.replyMode ? '' : ' <button class="linkbtn" id="hintHold">Turn on Live chat to deliver it</button>'}`);
+    setHtml($('replyHint'), `⚠️ Claude is idle, and I can't type into this terminal. Your message <b>waits</b> until you start the next turn there. ${state.helper && state.helper.supported ? '<button class="linkbtn" id="hintHelper">Set up the terminal helper</button>' : ''}${state.settings.replyMode ? '' : ' <button class="linkbtn" id="hintHold">or turn on Live chat</button>'}`);
+    if ($('hintHelper')) $('hintHelper').onclick = () => openTab('settings');
     if ($('hintHold')) $('hintHold').onclick = () => hud.send('set', { replyMode: true });
   } else $('replyHint').textContent = '📬 Claude is working — your message is delivered at its next step';
   $('btnSkip').hidden = !can;
