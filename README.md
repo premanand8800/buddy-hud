@@ -43,7 +43,7 @@ Download the installer for your system from the [Releases page](https://github.c
 
 On first launch Buddy HUD asks to add its hooks to `~/.claude/settings.json` (a backup is saved as `settings.json.bak-buddy-hud`) and to start at login. Both are in the tray menu later.
 
-> **Unsigned builds.** macOS: right-click the app, choose Open, then Open again (or run `xattr -cr "/Applications/Buddy HUD.app"`). Windows: on the SmartScreen warning click "More info", then "Run anyway".
+> **Unsigned builds.** macOS: the app is ad-hoc signed but not notarized. Drag it to Applications, then right-click it and choose Open (on macOS 15+ use System Settings, Privacy & Security, "Open Anyway"), or run `xattr -cr "/Applications/Buddy HUD.app"` once. If an older build says "Buddy HUD is damaged", that same `xattr` command fixes it. Windows: on the SmartScreen warning click "More info", then "Run anyway".
 
 ### From source
 
@@ -90,6 +90,7 @@ Claude Code [hooks](https://docs.claude.com/en/docs/claude-code/hooks) POST each
 
 | Symptom | Fix |
 |---|---|
+| macOS: "Buddy HUD is damaged and can't be opened" | Run `xattr -cr "/Applications/Buddy HUD.app"` (clears the download quarantine flag), then open it again. Fixed in builds after 0.4.4. |
 | Nothing appears | Start a new `claude` session (existing ones keep the old hook config). Check the tray menu: "Install Claude Code hooks". |
 | "Port 47800 is already in use" | Another copy is running. Quit it from its tray icon. |
 | Buddy is not on top (Linux) | Needs X11 or XWayland. The app relaunches itself with `--ozone-platform=x11`. |

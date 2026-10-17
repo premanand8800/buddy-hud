@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix (macOS): the downloaded app was reported as "damaged and can't be opened". With no Apple certificate electron-builder skipped signing, so after the bundle was renamed and its Info.plist edited, Electron's original signature no longer matched and Apple Silicon refused the quarantined app. Builds are now signed ad-hoc (`identity: "-"`, hardened runtime off), which gives a valid bundle signature. macOS still shows the normal "unidentified developer" prompt because the app is not notarized (see the README for how to open it). Already-downloaded 0.4.4 and older builds: run `xattr -cr "/Applications/Buddy HUD.app"`.
+
 ## 0.4.4
 
 - Fix #1 (notification spam): a permission prompt now alerts once instead of twice, Claude Code's repeating idle "waiting for your input" pings no longer pop toasts (the buddy still waves quietly), and alerts are rate limited per session.
