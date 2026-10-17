@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+
+- **Automatic updates on macOS.** When a new release is out, Buddy HUD downloads it in the background, checks it against GitHub's SHA-256 checksum, verifies the app's identity, version and signature, and then offers **Restart to update** (or installs it the next time you quit). No browser download, so no "damaged" or "can't be checked for malware" prompt on updates. Needs the app in a folder it can write to (e.g. Applications); otherwise, and on Windows/Linux, you get the Download button as before. This version still has to be installed by hand once; updates after it are automatic.
+- Fix: the update check treated every check as a new release, re-alerting every 12 hours.
+
 ## 0.10.1
 
 - **Compact layout** by @Samir-kumal: the buddy now hugs the right edge in a narrow column. The 💬 ⚙️ 🎨 buttons stack beside the buddy, the usage pill sits under it on one line, session chips stack vertically and the selected one carries the model name. Shown even with a single session.
