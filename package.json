@@ -12,7 +12,7 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "promo": "electron promo/record.js portrait promo/out.mp4",
-    "test": "node test/install-hooks.test.js && node test/usage.test.js && node test/chat.test.js && node test/pty.test.js && node test/e2e.js",
+    "test": "node test/install-hooks.test.js && node test/usage.test.js && node test/chat.test.js && node test/pty.test.js && node test/macupdate.test.js && node test/e2e.js",
     "test:unit": "node test/install-hooks.test.js",
     "test:e2e": "node test/e2e.js",
     "build:3d": "esbuild renderer/src/buddy3d.js --bundle --minify --format=iife --target=chrome120 --outfile=renderer/buddy3d.bundle.js"

@@ -301,7 +301,7 @@ function render() {
     const hp = state.helper || {};
     $('helperNote').textContent = !hp.supported ? 'Not available on Windows yet.' : hp.installed ? `Installed. Start Claude Code with ${hp.path} (or press "Copy alias", paste it in your shell profile, and keep typing \`claude\`). Sessions started that way can receive your chat messages even while idle.` : 'Lets you chat from the buddy with an idle Claude Code session on macOS and Linux, with no tmux. One click installs a tiny launcher you start Claude with.';
     $('btnHelper').hidden = !hp.supported || hp.installed; $('btnAlias').hidden = !hp.supported || !hp.installed;
-    $('optUpd').checked = st0.checkUpdates !== false; $('updStatus').textContent = state.updateStatus || '';
+    const up0 = state.update; $('optUpd').checked = st0.checkUpdates !== false; $('updStatus').textContent = up0 && up0.stage === 'downloading' ? `downloading ${up0.version}… ${Math.round(up0.progress * 100)}%` : (state.updateStatus || '');
     $('optSkin').value = (state.settings && state.settings.skin) || 'bot';
     const ph = state.phone || {};
     $('optPhone').checked = !!ph.enabled;
@@ -333,12 +333,17 @@ function render() {
 
   // update available (shown once per version until dismissed; also always reachable in Settings)
   const up = state.update;
-  const showUpd = !!up && state.settings.dismissedUpdate !== up.version;
+  // macOS self-update downloads quietly; the bar appears once it is ready to install (or if it has to fall back to a manual download)
+  const showUpd = !!up && up.stage !== 'downloading' && state.settings.dismissedUpdate !== up.version;
   $('updbar').hidden = !showUpd;
-  if (showUpd) {
-    setHtml($('updbar'), `<div class="h">⬆️ <span>Buddy HUD ${esc(up.version)} is available</span><span class="grow"></span><span class="dim">you have v${esc(state.version || '')}</span></div>${up.notes ? `<div class="notes">${esc(up.notes)}</div>` : ''}<div class="btnRow"><button class="primary" id="updGo">Download${up.download ? '' : ' page'}</button><button id="updPage">Release notes</button><button id="updLater">Later</button></div>`);
-    $('updGo').onclick = () => hud.send('openUpdate', 'download'); $('updPage').onclick = () => hud.send('openUpdate', 'page'); $('updLater').onclick = () => hud.send('dismissUpdate');
+  if (showUpd && up.stage === 'ready') {
+    setHtml($('updbar'), `<div class="h">⬆️ <span>Buddy HUD ${esc(up.version)} is ready to install</span><span class="grow"></span><span class="dim">you have v${esc(state.version || '')}</span></div>${up.notes ? `<div class="notes">${esc(up.notes)}</div>` : ''}<div class="btnRow"><button class="primary" id="updGo">Restart to update</button><button id="updPage">Release notes</button><button id="updLater">Later</button></div><div class="dim">Later installs it the next time you quit.</div>`);
+    $('updGo').onclick = () => hud.send('installUpdate');
+  } else if (showUpd) {
+    setHtml($('updbar'), `<div class="h">⬆️ <span>Buddy HUD ${esc(up.version)} is available</span><span class="grow"></span><span class="dim">you have v${esc(state.version || '')}</span></div>${up.notes ? `<div class="notes">${esc(up.notes)}</div>` : ''}${up.err ? `<div class="dim">Couldn’t update automatically: ${esc(up.err)}</div>` : ''}<div class="btnRow"><button class="primary" id="updGo">Download${up.download ? '' : ' page'}</button><button id="updPage">Release notes</button><button id="updLater">Later</button></div>`);
+    $('updGo').onclick = () => hud.send('openUpdate', 'download');
   }
+  if (showUpd) { $('updPage').onclick = () => hud.send('openUpdate', 'page'); $('updLater').onclick = () => hud.send('dismissUpdate'); }
 
   // onboarding / empty states
   const ob = $('onboard');
