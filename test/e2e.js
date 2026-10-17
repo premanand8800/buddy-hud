@@ -110,6 +110,27 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     await post({ session_id: 's1', hook_event_name: 'Notification', message: 'Claude is waiting for your input' });
     assert.strictEqual((await state()).sessions[0].status, 'waiting');
 
+    // issue #1: one permission prompt = one alert; idle pings are quiet; real questions alert once per 30 s
+    await post({ session_id: 'n1', cwd: '/tmp/n', hook_event_name: 'UserPromptSubmit', prompt: 'x' });
+    const askCount = async () => (await state()).alertLog.filter((a) => a.startsWith('ask:')).length;
+    const base0 = await askCount();
+    const heldP = http.request({ host: '127.0.0.1', port: PORT, path: '/hook', method: 'POST', agent: false }); heldP.on('error', () => {});
+    heldP.end(JSON.stringify({ session_id: 'n1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'ls' } }));
+    await waitFor(async () => (await state()).perms.length > 0, 'n1 permission');
+    await post({ session_id: 'n1', hook_event_name: 'Notification', notification_type: 'permission_prompt', message: 'Claude needs your permission to use Bash' });
+    assert.strictEqual(await askCount(), base0 + 1, 'permission prompt must alert exactly once');
+    heldP.destroy();
+    await waitFor(async () => (await state()).perms.length === 0, 'n1 permission cleared');
+    for (let i = 0; i < 3; i++) await post({ session_id: 'n1', hook_event_name: 'Notification', notification_type: 'idle_prompt', message: 'Claude is waiting for your input' });
+    assert.strictEqual(await askCount(), base0 + 1, 'idle pings must not toast');
+    await post({ session_id: 'n1', hook_event_name: 'Notification', message: 'Claude has a question about the database' });
+    await post({ session_id: 'n1', hook_event_name: 'Notification', message: 'Claude has another question' });
+    assert.strictEqual(await askCount(), base0 + 1, 'alerts for one session are rate limited (30 s), so no second toast right after the permission one');
+    await post({ session_id: 'n2', cwd: '/tmp/n2', hook_event_name: 'Notification', message: 'Claude has a question about the database' });
+    assert.strictEqual(await askCount(), base0 + 2, 'a different session still alerts');
+    await post({ session_id: 'n2', hook_event_name: 'SessionEnd' });
+    await post({ session_id: 'n1', hook_event_name: 'SessionEnd' });
+
     // phone access: token required, state readable, Allow/Deny works and releases the held hook
     const ph = (method, url, body) => new Promise((resolve, reject) => {
       const r = http.request({ host: '127.0.0.1', port: 47813, path: url, method, agent: false, headers: { 'Content-Type': 'application/json' } }, (res) => { let o = ''; res.on('data', (d) => (o += d)); res.on('end', () => resolve({ status: res.statusCode, body: o })); });

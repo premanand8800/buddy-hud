@@ -291,12 +291,15 @@ function handleEvent(ev) {
       s.status = (ev.notification_type === 'permission_prompt' || /permission/i.test(ev.message || '')) ? 'permission' : 'waiting';
       s.note = ev.message || 'needs your attention';
       pushFeed(s, { emoji: '🙋', text: clip(s.note, 140), kind: 'ask' });
-      alertUser('ask', `Claude · ${s.project}`, s.note);
+      // Quiet by design (issue #1): the PermissionRequest hook already alerts for permission prompts, and Claude Code's
+      // idle "waiting for your input" ping repeats every minute or so. Only genuinely new questions get a toast.
+      if (s.status !== 'permission' && !/waiting for your input|idle/i.test(ev.message || '') && ev.notification_type !== 'idle_prompt')
+        alertUser('ask', `Claude · ${s.project}`, s.note, s.id);
       break;
     case 'Stop':
       s.status = 'done'; s.tool = null; readContext(s); s.lastMsg = ev.last_assistant_message || lastAssistantText(s);
       if (s.turn) s.summary = { ms: Date.now() - s.turn.start, edited: s.turn.edited.slice(), reads: s.turn.reads, cmds: s.turn.cmds, errors: s.turn.errors, away: Date.now() - lastSeenAt > 60000 };
-      alertUser('done', `✅ ${s.project}: Claude finished`, clip(plainText(s.lastMsg) || 'Waiting for you', 120));
+      alertUser('done', `✅ ${s.project}: Claude finished`, clip(plainText(s.lastMsg) || 'Waiting for you', 120), s.id);
       pushFeed(s, { emoji: '💬', text: clip(s.lastMsg || 'waiting for you', 120), kind: 'done' });
       break;
     case 'SubagentStop':
@@ -348,9 +351,17 @@ function toast(title, body) {
 }
 
 // kind: 'done' | 'ask' | 'stuck'. Honours per-kind toggles, sound/notification switches and do-not-disturb.
-function alertUser(kind, title, body) {
+const alertLog = []; // test hook
+const lastAlert = new Map(); // `${sessionId}:${kind}` -> time; stops the same session buzzing repeatedly
+function alertUser(kind, title, body, sessionId) {
   const a = settings.alerts;
   if (a.dnd || a[kind] === false) return;
+  if (sessionId) {
+    const key = sessionId + ':' + kind, now = Date.now();
+    if (now - (lastAlert.get(key) || 0) < (kind === 'ask' ? 30000 : 10000)) return;
+    lastAlert.set(key, now);
+  }
+  if (TEST) alertLog.push(kind + ':' + title);
   if (a.notify) toast(title, settings.privacy ? 'Open Buddy HUD for details' : body);
   if (a.sound && win && !win.isDestroyed()) win.webContents.send('alert', kind);
 }
@@ -386,7 +397,7 @@ function handleHook(req, res, body) {
       const q = ev.tool_name === 'ExitPlanMode' ? 'Plan ready for your review' : ((ev.tool_input && ev.tool_input.questions && ev.tool_input.questions[0] && ev.tool_input.questions[0].question) || 'Claude has a question');
       s.status = 'waiting'; s.note = clip(q, 200); s.tool = null;
       pushFeed(s, { emoji: '🙋', text: clip(q, 140), kind: 'ask' });
-      alertUser('ask', `🙋 ${s.project}`, clip(q, 120));
+      alertUser('ask', `🙋 ${s.project}`, clip(q, 120), s.id);
       emit();
       return res.end('{}');
     }
@@ -398,7 +409,7 @@ function handleHook(req, res, body) {
       pendingPerms.set(pid, { res, sessionId: id, tool, emoji: emojiFor(tool), summary: sum.text, diff: storeDiff(buildDiff(tool, ev.tool_input)), input: ev.tool_input, t: Date.now() });
       s.status = 'permission';
       pushFeed(s, { emoji: '🔐', text: `permission: ${tool} ${clip(sum.text, 90)}`, kind: 'ask' });
-      alertUser('ask', `🔐 ${s.project}: allow ${tool}?`, clip(sum.text, 120));
+      alertUser('ask', `🔐 ${s.project}: allow ${tool}?`, clip(sum.text, 120), s.id);
       res.on('close', () => { if (!res.writableEnded && pendingPerms.delete(pid)) { if (s.status === 'permission') s.status = 'tool'; emit(); } });
       emit();
       return;
@@ -472,7 +483,7 @@ function runSelfTest() {
 
 function snapshot() {
   return {
-    pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
+    ...(TEST ? { alertLog } : {}), pet: { phase: pet.phase, dir: pet.dir }, settings: { ...settings, phone: undefined }, phone: phoneInfo(), hooksInstalled: hooksInstalled(), health: computeHealth(), selfTest, daily: dailyTotals(), version: app.getVersion(),
     sessions: [...sessions.values()].sort((a, b) => b.updated - a.updated).map((s) => ({
       ...s, _usageState: undefined, usage: s._usage || null, canReply: stopHolds.has(s.id), canType: !!s.tmux, queued: (queued.get(s.id) || []).length,
     })),
@@ -590,7 +601,7 @@ function sendReply(sessionId, text) {
     q.push(text);
     queued.set(sessionId, q);
     const s = sessions.get(sessionId);
-    if (s) pushFeed(s, { emoji: '📬', text: 'queued: ' + clip(text, 100), kind: 'prompt' });
+    if (s) pushFeed(s, { emoji: '📬', text: (['done', 'idle', 'waiting'].includes(s.status) ? 'NOT delivered yet (Claude is idle) — it arrives when you start the next turn: ' : 'queued for Claude’s next step: ') + clip(text, 100), kind: 'prompt' });
   }
   emit();
 }

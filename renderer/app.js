@@ -308,8 +308,15 @@ function render() {
   const idle = s && s.status === 'done';
   const showReply = !!s && (can || drawer || (idle && s.canType));
   $('reply').hidden = !showReply;
-  $('replyHint').className = 'hint' + (can ? ' live' : '');
-  $('replyHint').textContent = can ? '🟢 Claude is waiting — reply goes straight into the session' : idle && s.canType ? '⌨️ typed into your tmux pane' : '📬 queued — delivered at Claude’s next step (type in terminal if idle)';
+  const wontDeliver = !!s && !can && !(idle && s.canType) && s && ['done', 'idle', 'waiting'].includes(s.status);
+  $('replyHint').className = 'hint' + (can ? ' live' : wontDeliver ? ' warn' : '');
+  if (!wontDeliver) $('replyHint').__html = null;
+  if (can) $('replyHint').textContent = '🟢 Claude is waiting — your reply goes straight into the session';
+  else if (idle && s && s.canType) $('replyHint').textContent = '⌨️ Typed into your tmux pane';
+  else if (wontDeliver) {
+    setHtml($('replyHint'), `⚠️ Claude is idle, and I can't type into this terminal. Your message <b>waits</b> until you start the next turn there.${state.settings.replyMode ? '' : ' <button class="linkbtn" id="hintHold">Hold turns open so I can deliver it</button>'}`);
+    if ($('hintHold')) $('hintHold').onclick = () => hud.send('set', { replyMode: true });
+  } else $('replyHint').textContent = '📬 Claude is working — your message is delivered at its next step';
   $('btnSkip').hidden = !can;
 
   const ui = { drawer, typing: document.activeElement === $('replyInput') && !!$('replyInput').value };

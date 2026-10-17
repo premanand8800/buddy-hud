@@ -298,3 +298,6 @@ body.skin3d #item3d { display: block; position: absolute; left: 50%; top: -6px; 
 /* power: idle animations tick a few times per second instead of 60 (each tick repaints a transparent window) */
 #clawd[data-act=idle] .body { animation: bob 5.2s steps(8) infinite; }
 #clawd[data-act=idle] #item { animation: zzz 3s steps(10) infinite; }
+
+.hint.warn { color: var(--amber); font-size: 12.5px; }
+.hint.warn b { color: #fff; }

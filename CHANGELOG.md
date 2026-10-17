@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.4
+
+- Fix #1 (notification spam): a permission prompt now alerts once instead of twice, Claude Code's repeating idle "waiting for your input" pings no longer pop toasts (the buddy still waves quietly), and alerts are rate limited per session.
+- Fix #2 (replies that seem to vanish): when Claude is idle and Buddy HUD cannot type into the terminal, the reply box now says so clearly ("your message waits until you start the next turn") with a one-click "Hold turns open" option, and the feed marks such messages "NOT delivered yet".
+- Thanks to @daari-git for both reports.
+
 ## 0.4.3
 
 - Fix: the buddy was hidden at login whenever no Claude session was open. New setting "Always show" (on by default) keeps it on screen like a desktop pet.
