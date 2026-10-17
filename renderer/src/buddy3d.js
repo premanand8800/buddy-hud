@@ -167,6 +167,25 @@ if (renderer) {
   const jets = [-0.72, 0.72].map((x) => { const j = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 10), new THREE.MeshBasicMaterial({ color: 0x7ee8ff })); j.rotation.x = Math.PI; j.position.set(x, -0.75, 0); j.visible = false; root.add(j); return j; });
   const wcol = new THREE.Vector3();
 
+  // costume art decal: the same SVG art as the flat look, baked into a texture on the torso's front face
+  const decal = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.14), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })); decal.position.set(0, 0.57, D / 2 + 0.004); decal.visible = false; body.add(decal);
+  let decalFor = '';
+  function buildDecal(name) {
+    decalFor = name;
+    const art = window.COSTUME_ART && window.COSTUME_ART[name];
+    if (!art) { decal.visible = false; return; }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 114" width="640" height="456"><defs>${window.COSTUME_DEFS}</defs><g clip-path="url(#bodyClip)">${art.under}${art.over}</g></svg>`;
+    const img = new Image();
+    img.onload = () => {
+      if (decalFor !== name) return;
+      const cv = document.createElement('canvas'); cv.width = 640; cv.height = 456; cv.getContext('2d').drawImage(img, 0, 0, 640, 456);
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      if (decal.material.map) decal.material.map.dispose();
+      decal.material.map = tex; decal.material.needsUpdate = true; decal.visible = true; dirty = true; settle = 12;
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
   // canoe for the aura-farming pose (Pacu Jalur boat)
   const canoe = new THREE.Group(); canoe.visible = false; canoe.scale.set(0.7, 0.85, 0.85); canoe.position.y = 0.12; root.add(canoe);
   { const hullMat = new THREE.MeshStandardMaterial({ color: 0x6b3f2a, roughness: 0.7 });
@@ -332,7 +351,7 @@ if (renderer) {
       l.scale.y = ease(l.scale.y, legScale, k);
     }
     const cs = COST[st.costume];
-    cape.visible = !!(cs && cs.cape); ears.visible = st.costume === 'batman'; mask.visible = ['spider', 'batman'].includes(st.costume);
+    cape.visible = !!(cs && cs.cape); ears.visible = st.costume === 'batman'; mask.visible = false;
     hammer.visible = st.costume === 'thor'; shield.visible = st.costume === 'captain';
     web.visible = showWeb; ringL.visible = ringR.visible = showRings;
     if (showRings) { ringL.rotation.z = t * 2; ringR.rotation.z = -t * 2; }
@@ -346,7 +365,7 @@ if (renderer) {
     book.position.y = 1.62 + Math.sin(t * 2) * 0.03;
 
     // eyes: expression + blink + gaze
-    for (const [n, g] of Object.entries(eyes)) g.visible = n === st.eyes && st.shades !== 'sunglasses';
+    for (const [n, g] of Object.entries(eyes)) g.visible = n === st.eyes && st.shades !== 'sunglasses' && !['spider', 'iron', 'batman'].includes(st.costume);
     const blink = (t % 3.4) > 3.25 ? 0.1 : 1;
     for (const e of openEyes.concat(wideEyes)) e.scale.y = blink;
     face.position.x = ease(face.position.x, eyeX, k); face.position.y = ease(face.position.y, eyeY, k);
@@ -366,6 +385,7 @@ if (renderer) {
       if (o.color2) col2.set(o.color2);
       if ('costume' in o) {
         st.costume = o.costume;
+        if (o.costume === 'none') { decal.visible = false; decalFor = ''; } else if (decalFor !== o.costume) buildDecal(o.costume);
         const cs = COST[o.costume];
         if (cs) { bodyMat.color.setHex(cs.body); bodyMat.emissive.setHex(cs.body); handBase.setHex(cs.hands); handMat.emissive.setHex(cs.hands); legMat.color.setHex(cs.legs); legMat.emissive.setHex(cs.legs); if (cs.cape) capeMat.color.setHex(cs.cape); }
         else { bodyMat.color.copy(col); bodyMat.emissive.copy(col); handMat.emissive.copy(col); legMat.color.copy(col); legMat.emissive.copy(col); }

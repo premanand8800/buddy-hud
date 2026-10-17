@@ -237,6 +237,7 @@ function render() {
   svg.dataset.skin = st0.skin || 'bot';
   svg.dataset.costume = ((state.settings && state.settings.costume) || 'none') === 'none' ? '' : state.settings.costume;
   if (!svg.dataset.costume) svg.removeAttribute('data-costume');
+  if (window.__costumeApplied !== (svg.dataset.costume || '')) { window.__costumeApplied = svg.dataset.costume || ''; if (window.applyCostumeArt) window.applyCostumeArt(window.__costumeApplied); }
   svg.dataset.shades = farm ? 'sunglasses' : (st0.shades || 'none'); svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
   document.body.dataset.aura = st0.aura || 'off';
   if (st0.costume && st0.costume !== 'none') document.body.dataset.costume = st0.costume; else document.body.removeAttribute('data-costume');

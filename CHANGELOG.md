@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Designer-made hero costumes.** The seven hero costumes are now real illustrated outfits instead of tinted shapes: masks and cowls, winged helmet, star-and-stripe chest, gold faceplate with arc reactor, collar and amulet, chest emblems, belts, boots and shading. One art source (`renderer/costumes.js`) drives both the flat looks and the 3D look, where it is painted onto the body as a texture.
+
 - **Hero stunts are now real sequences** (flat looks and 3D): the web-slinger shoots a web to the far corner, swings across and lands, then shoots back; the thunder god's storm gathers, lightning strikes and he arrives in a shockwave, raises the hammer and leaves in a second bolt; the sorcerer opens a glowing portal, steps in and comes out of another one; the armored hero's suit assembles piece by piece (boots, gauntlets, faceplate, chest reactor), ignites its jets, flies across the sky and lands.
 
 - **Hero costumes** (Customize → Hero costumes): seven original look-alike costumes with their own idle stunts, in the flat looks and in 3D: 🕷️ Web Slinger (swings from a web), ⚡ Thunder God (hammer, storm cloud and lightning), 🛡️ Star Shield (throws and catches its shield), 🤖 Iron Armor (hovers on jets, fires a repulsor), 🔮 Mystic Sorcerer (spinning mandalas), 🦸 Sky Guardian (flies) and 🦇 Night Vigilante (bat-signal, grapple, billowing cape). While Claude works the hero keeps its costume and does the usual typing/reading moves. They are unofficial fan-style costumes with neutral names, not licensed characters.
