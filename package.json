@@ -89,6 +89,8 @@
       ],
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false,
       "extendInfo": {
         "LSUIElement": true
       }
