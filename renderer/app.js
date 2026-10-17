@@ -73,6 +73,16 @@ function chime(kind) {
   } catch {}
 }
 hud.onAlert(chime);
+const showAura = (a) => {
+  if (!state.settings || !state.settings.aura || state.settings.aura === 'off') return;
+  const el = document.createElement('div');
+  el.className = 'aurapop' + (a.n < 0 ? ' neg' : '');
+  el.innerHTML = `${a.n > 0 ? '+' : '−'}${Math.abs(a.n).toLocaleString()} aura<small>${a.n < 0 ? 'CRINGE' : a.long ? 'LEGENDARY GRIND' : 'AURA FARMED'}</small>`;
+  $('aurapops').appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+};
+hud.onAura(showAura);
+window.__aura = showAura;
 hud.onPet((p) => { pet = p; render(); });
 let seenAt = 0;
 addEventListener('mousemove', () => { if (Date.now() - seenAt > 4000) { seenAt = Date.now(); hud.send('seen'); } });
@@ -189,7 +199,9 @@ function render() {
   const s = ss.find((x) => x.id === selected);
   if (selected !== lastSel) { lastSel = selected; hud.send('select', selected); }
   const perms = state.perms;
-  const a = actFor(s, perms);
+  let a = actFor(s, perms);
+  const farm = ((state.settings && state.settings.aura) === 'max') && ['idle'].includes(a.act) && !(pet.phase === 'walk' || pet.phase === 'run');
+  if (farm) a = { act: 'farm', eyes: 'open', item: '🌊', item2: '', look: '' };
   document.body.dataset.act = a.act;
 
   // theme follows the model (picked model shows immediately, real model confirms later)
@@ -216,11 +228,11 @@ function render() {
   svg.style.setProperty('--dir', String(pet.dir || 1));
   const st0 = state.settings || {};
   svg.dataset.skin = st0.skin || 'bot';
-  svg.dataset.shades = st0.shades || 'none'; svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
+  svg.dataset.shades = farm ? 'sunglasses' : (st0.shades || 'none'); svg.dataset.coffee = st0.coffee ? '1' : '0'; svg.dataset.think = st0.thinkPose || 'scratch';
   document.body.dataset.aura = st0.aura || 'off';
   svg.dataset.act = a.act; svg.dataset.eyes = a.eyes; svg.dataset.look = a.look;
   $('item').textContent = a.item; $('item2').textContent = a.item2;
-  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: st0.shades || 'none', coffee: !!st0.coffee, think: st0.thinkPose || 'scratch' });
+  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch' });
 
   // context pill
   const pct = s && s.ctx.max ? Math.min(100, (s.ctx.used / s.ctx.max) * 100) : 0;
@@ -294,7 +306,7 @@ function render() {
     // usage
     const u = s && s.usage, dd = state.daily;
     const money = (c, partial) => '≈$' + c.toFixed(c < 10 ? 2 : 1) + (partial ? '+' : '');
-    setHtml($('usage'), s ? `<div class="row"><span>Tokens this session</span><span>${u ? `${fmt(u.in + u.cacheRead + u.cacheWrite)} in · ${fmt(u.out)} out` : '—'}</span></div><div class="row"><span>Estimated cost</span><span title="${u && u.unpriced.length ? 'No price known for: ' + esc(u.unpriced.join(', ')) + '. Add prices in ~/.buddy-hud/prices.json' : 'Uses public list prices'}">${u ? (u.cost > 0 || !u.unpriced.length ? money(u.cost, u.unpriced.length) : 'price unknown') + (u.unpriced.length ? ' (some models unpriced)' : '') : '—'}</span></div><div class="row"><span>Today (all sessions)</span><span>${dd ? `${fmt(dd.in + dd.cr + dd.cw)} in · ${fmt(dd.out)} out · ${dd.cost > 0 || !dd.partial ? money(dd.cost, dd.partial) : 'price unknown'}` : '—'}</span></div>` : '');
+    setHtml($('usage'), s ? `<div class="row"><span>Tokens this session</span><span>${u ? `${fmt(u.in + u.cacheRead + u.cacheWrite)} in · ${fmt(u.out)} out` : '—'}</span></div><div class="row"><span>Estimated cost</span><span title="${u && u.unpriced.length ? 'No price known for: ' + esc(u.unpriced.join(', ')) + '. Add prices in ~/.buddy-hud/prices.json' : 'Uses public list prices'}">${u ? (u.cost > 0 || !u.unpriced.length ? money(u.cost, u.unpriced.length) : 'price unknown') + (u.unpriced.length ? ' (some models unpriced)' : '') : '—'}</span></div><div class="row"><span>Aura 🔥</span><span>${(st0.auraScore || 0).toLocaleString()}</span></div><div class="row"><span>Today (all sessions)</span><span>${dd ? `${fmt(dd.in + dd.cr + dd.cw)} in · ${fmt(dd.out)} out · ${dd.cost > 0 || !dd.partial ? money(dd.cost, dd.partial) : 'price unknown'}` : '—'}</span></div>` : '');
     $('ver').textContent = 'Buddy HUD v' + (state.version || '');
     const st = state.selfTest;
     setHtml($('health'), `<span class="msg">${hl.state === 'ok' ? '🟢' : hl.state === 'waiting' ? '⚪' : hl.state === 'off' ? '🔴' : '🟠'} ${esc(hl.msg)}</span>${hl.state === 'off' || hl.state === 'partial' ? '<button id="btnFix">Fix</button>' : ''}<button id="btnSelf">Self-test</button>${st ? `<span class="st">${st.ok === null ? '⏳' : st.ok ? '✅' : '❌'} ${esc(st.detail)}</span>` : ''}`);

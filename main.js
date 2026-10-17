@@ -35,7 +35,7 @@ const sessions = new Map(); // id -> session
 const pendingPerms = new Map(); // id -> { res, sessionId, tool, summary, diff }
 const stopHolds = new Map(); // sessionId -> res
 const queued = new Map(); // sessionId -> [text]
-const DEFAULTS = { shades: 'none', coffee: false, thinkPose: 'scratch', aura: 'off', alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
+const DEFAULTS = { auraScore: 0, shades: 'none', coffee: false, thinkPose: 'scratch', aura: 'off', alwaysShow: true, walk: true, phone: { enabled: false, token: '' }, replyMode: false, scale: 1, privacy: false, pos: null, skin: 'bot', alerts: { notify: true, sound: true, done: true, ask: true, stuck: true, dnd: false } };
 let settings = { ...DEFAULTS };
 try { const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings = { ...DEFAULTS, ...saved, alerts: { ...DEFAULTS.alerts, ...(saved.alerts || {}) } }; } catch {}
 const DAILY_FILE = path.join(os.homedir(), '.buddy-hud', 'daily.json');
@@ -322,6 +322,12 @@ function handleEvent(ev) {
     case 'Stop':
       s.status = 'done'; s.tool = null; readContext(s); s.lastMsg = ev.last_assistant_message || lastAssistantText(s);
       if (s.turn) s.summary = { ms: Date.now() - s.turn.start, edited: s.turn.edited.slice(), reads: s.turn.reads, cmds: s.turn.cmds, errors: s.turn.errors, away: Date.now() - lastSeenAt > 60000 };
+      // aura farming: every finished turn earns (or, with errors, loses) aura
+      if (s.summary) {
+        const gain = s.summary.errors ? -100 : 500 + (s.summary.ms > 300000 ? 500 : 0);
+        settings.auraScore = (settings.auraScore || 0) + gain; saveSettings();
+        if (win && !win.isDestroyed()) win.webContents.send('aura', { n: gain, long: s.summary.ms > 300000 });
+      }
       alertUser('done', `✅ ${s.project}: Claude finished`, clip(plainText(s.lastMsg) || 'Waiting for you', 120), s.id);
       pushFeed(s, { emoji: '💬', text: clip(s.lastMsg || 'waiting for you', 120), kind: 'done' });
       break;

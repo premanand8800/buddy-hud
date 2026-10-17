@@ -80,7 +80,7 @@
           <select id="optThink"><option value="scratch">Scratch head</option><option value="chin">Hand on chin 🤔</option></select>
         </label>
         <label>Aura
-          <select id="optAura"><option value="off">Off</option><option value="glow">✨ Glow</option><option value="max">🔥 Aura farming (max)</option></select>
+          <select id="optAura"><option value="off">Off</option><option value="glow">✨ Glow</option><option value="max">🔥 Aura farming (idle dance, shades, canoe, +aura)</option></select>
         </label>
         <div class="grp">Behaviour</div>
         <label><input type="checkbox" id="optAlways"> 👀 Always show, even when Claude is closed</label>
@@ -108,6 +108,7 @@
     </button>
 
     <div id="mascot" title="Click for details">
+      <div id="aurapops"></div>
       <div id="aura"><div class="ring"></div><div class="ring r2"></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="shadow"></div>
       <div id="modelTag"><i></i><span>—</span></div>
@@ -117,7 +118,8 @@
           <rect x="178" y="30" width="16" height="4"/><rect x="178" y="52" width="22" height="4"/><rect x="178" y="74" width="16" height="4"/>
         </g>
         <g class="rig">
-          <g class="body">
+          <g class="canoe" id="canoe" transform="translate(0,-14)"><path class="hull" d="M-46 154 Q-52 146 -40 146 L200 146 Q212 146 206 154 Q196 172 160 174 L0 174 Q-36 172 -46 154Z"/><path class="trim" d="M-44 150 L204 150 L202 154 L-42 154Z"/><path class="wave" d="M-30 180 q10 -5 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>
+        <g class="body">
             <g class="leg" id="legA"><rect x="0" y="114" width="16" height="44"/><rect x="36" y="114" width="16" height="44"/></g>
             <g class="leg" id="legB"><rect x="107" y="114" width="16" height="44"/><rect x="144" y="114" width="16" height="44"/></g>
             <g class="deco" id="antenna"><rect x="76" y="-26" width="8" height="26"/><circle cx="80" cy="-32" r="10"/></g>

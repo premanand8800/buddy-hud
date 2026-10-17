@@ -74,6 +74,7 @@ const waitFor = async (fn, what, ms = 6000) => { const t = Date.now(); for (;;) 
     assert.ok(st.sessions[0].ctx.used >= 90000);
     assert.strictEqual(st.sessions[0].ctx.max, 200000, 'standard window auto-detected');
     assert.strictEqual(st.sessions[0].summary.edited.length, 1);
+    assert.strictEqual(st.settings.auraScore, -100, 'a turn that had a tool error costs aura (the meme: cringe)');
     assert.strictEqual(st.health.state, 'ok');
 
     // hold mode is on (settings) but the chat panel is closed, so the Stop hook must return at once: no "running stop hooks" in the terminal

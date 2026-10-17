@@ -121,6 +121,14 @@ if (renderer) {
     const han = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 8, 14), mugMat); han.position.set(0.12, 0, 0); mug.add(han);
     mug.position.set(0.1, -0.34, 0.26); handR.add(mug); }
 
+  // canoe for the aura-farming pose (Pacu Jalur boat)
+  const canoe = new THREE.Group(); canoe.visible = false; canoe.scale.set(0.7, 0.85, 0.85); canoe.position.y = 0.12; root.add(canoe);
+  { const hullMat = new THREE.MeshStandardMaterial({ color: 0x6b3f2a, roughness: 0.7 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.6 });
+    const hull = box(3.0, 0.2, 0.78, hullMat, 0.09); hull.position.set(0, -0.58, 0); canoe.add(hull);
+    const trim = box(3.02, 0.05, 0.8, trimMat, 0.02); trim.position.set(0, -0.47, 0); canoe.add(trim);
+    for (const sx of [-1, 1]) { const tip = box(0.42, 0.16, 0.5, hullMat, 0.06); tip.position.set(sx * 1.6, -0.5, 0); tip.rotation.z = sx * 0.35; canoe.add(tip); } }
+
   // ---------- state ----------
   const st = { act: 'idle', eyes: 'sleep', dir: 1, item: '', shades: 'none', coffee: false, think: 'scratch' };
   const itemEl = document.createElement('div'); itemEl.id = 'item3d'; host.appendChild(itemEl);
@@ -151,7 +159,7 @@ if (renderer) {
     let targetYaw = Math.sin(t * 0.6) * 0.32; // slow turntable sway shows off the depth
     let by = Math.sin(t * Math.PI * 2 / 2.6) * 0.015, roll = 0, pitch = 0, sx = 1, sy = 1, hop = 0;
     let lPX = -0.9, lPY = 0.76, rPX = 0.9, rPY = 0.76, lRotX = 0, lRotZ = 0, rRotX = 0, rRotZ = 0, lPosZ = 0, rPosZ = 0, legSwing = 0, legLift = 0, legScale = 1;
-    let showKb = false, showBook = false, showLens = false, eyeX = 0, eyeY = 0;
+    let showCanoe = false, showKb = false, showBook = false, showLens = false, eyeX = 0, eyeY = 0;
     handMat.color.copy(col);
 
     switch (a) {
@@ -199,6 +207,14 @@ if (renderer) {
       case 'sit':
         legScale = 0.32; by = -0.3 + Math.sin(t * 1.5) * 0.01; targetYaw = Math.sin(t * 0.4) * 0.25; lRotZ = -0.3; rRotZ = 0.3;
         break;
+      case 'farm': {
+        // aura farming: calm sway, arms out and gliding, the boat-kid stance
+        const w = t * 1.9;
+        targetYaw = Math.sin(t * 0.55) * 0.35; roll = Math.sin(w * 0.5) * 0.07; by = Math.abs(Math.sin(w * 0.5)) * 0.03 - 0.02; showCanoe = true;
+        rRotZ = 1.45 + Math.sin(w) * 0.28; rRotX = -0.2; lRotZ = -1.45 + Math.sin(w + Math.PI) * 0.28; lRotX = -0.2;
+        handMat.color.copy(col2); legSwing = 0;
+        break;
+      }
       default: // idle / asleep: still, slightly turned so the depth reads
         by = -0.01; targetYaw = 0.22; pitch = 0.05;
     }
@@ -216,6 +232,7 @@ if (renderer) {
       l.position.y = 0.02 + (l.userData.phase ? legLift : 0);
       l.scale.y = ease(l.scale.y, legScale, k);
     }
+    canoe.visible = showCanoe; canoe.rotation.z = showCanoe ? Math.sin(t * 1.9 * 0.5) * 0.03 : 0;
     keyboard.visible = showKb; book.visible = showBook; lens.visible = showLens;
     sun.visible = st.shades === 'sunglasses'; gog.visible = st.shades === 'goggles';
     const free = ['idle', 'sit', 'look', 'walk'].includes(a);
