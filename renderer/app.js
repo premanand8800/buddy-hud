@@ -143,8 +143,14 @@ function playEmote(id) {
   clearTimeout(emoteTimer); if (emote) emoteTimer = setTimeout(render, emote.ms + 50);
   render();
 }
-setHtml($('emotes'), `<div class="h">🎭 <span>Emotes</span></div><div class="emoteGrid">${EMOTES.map((e) => `<button data-emote="${e.id}" title="${e.name}">${e.icon}<span>${e.name}</span></button>`).join('')}</div>`);
-$('emotes').querySelectorAll('[data-emote]').forEach((b) => (b.onclick = () => playEmote(b.dataset.emote)));
+// a compact icon grid beside the dock buttons, so the buddy stays in view; the header shows the hovered emote's name
+setHtml($('emotes'), `<div class="h">🎭 <span id="emoName">Emotes</span><span class="grow"></span><button id="emoClose" title="Close (Esc)">✕</button></div><div class="emoteGrid">${EMOTES.map((e) => `<button data-emote="${e.id}" title="${e.name}" aria-label="${e.name}">${e.icon}</button>`).join('')}</div>`);
+$('emotes').querySelectorAll('[data-emote]').forEach((b) => {
+  b.onclick = () => playEmote(b.dataset.emote);
+  b.onmouseenter = () => { $('emoName').textContent = b.title; };
+  b.onmouseleave = () => { $('emoName').textContent = 'Emotes'; };
+});
+$('emoClose').onclick = () => { emotesOpen = false; render(); };
 $('btnEmote').onclick = () => { emotesOpen = !emotesOpen; render(); };
 
 $('btnQuit').onclick = () => hud.send('quit');
