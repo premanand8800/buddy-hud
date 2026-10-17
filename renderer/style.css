@@ -444,18 +444,7 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 #clawd[data-costume] .hand rect { fill: var(--hands) !important; }
 #clawd[data-costume] .cape path { fill: var(--cape, #c1272d); }
 #clawd[data-costume=thor] { --cape: #b3202a; } #clawd[data-costume=strange] { --cape: #b3202a; } #clawd[data-costume=superman] { --cape: #c1272d; } #clawd[data-costume=batman] { --cape: #15171c; }
-.c-spider .webl path { fill: none; stroke: #121212; stroke-width: 1.5; opacity: .5; }
-.c-spider .lens { fill: #fff; stroke: #121212; stroke-width: 3.5; }
-.c-spider .spd circle { fill: #121212; } .c-spider .spd path { fill: none; stroke: #121212; stroke-width: 2.4; }
-.c-thor .wing { fill: #cfd6e0; stroke: #8d96a3; stroke-width: 2; } .c-thor .disc { fill: #cfd6e0; stroke: #6f7886; stroke-width: 2; } .c-thor .belt { fill: #3a2a1c; }
-.c-captain .star { fill: #fff; } .c-captain .red { fill: #c1272d; } .c-captain .whiteb { fill: #fff; }
-.c-iron .plate { fill: #e0b030; stroke: #8a6a10; stroke-width: 3; } .c-iron .slit { fill: #fff; filter: none; animation: ironEyes 2s ease-in-out infinite; } .c-iron .goldb { fill: #e0b030; }
-.c-iron .arcring { fill: none; stroke: #bff4ff; stroke-width: 3; } .c-iron .arccore { fill: #7ee8ff; animation: corePulse 1.6s ease-in-out infinite; }
 @keyframes ironEyes { 50% { opacity: .55; } } @keyframes corePulse { 50% { opacity: .5; r: 5; } }
-.c-strange .collar { fill: #b3202a; stroke: #7a1019; stroke-width: 2; } .c-strange .grey { fill: #d9d9d9; } .c-strange .belt { fill: #7a4a1c; }
-.c-strange .amulet circle:first-child { fill: #3fa34d; stroke: #d6b24a; stroke-width: 3; } .c-strange .amulet ellipse { fill: #0c2b10; } .c-strange .amulet .pup { fill: #9dff9d; }
-.c-superman .emb { fill: #c1272d; stroke: #f1c40f; stroke-width: 3; } .c-superman .swave { fill: none; stroke: #f1c40f; stroke-width: 4; stroke-linecap: round; } .c-superman .trunk { fill: #c1272d; } .c-superman .goldb { fill: #f1c40f; } .c-superman .curl { fill: #111; }
-.c-batman .ear { fill: #20232a; } .c-batman .blens { fill: #fff; } .c-batman .emblem { fill: #f1c40f; stroke: #111; stroke-width: 3; } .c-batman .bat { fill: #111; } .c-batman .goldb { fill: #f1c40f; }
 #clawd .hammer .hh { fill: #7a4a1c; } #clawd .hammer .hd { fill: #8d96a3; stroke: #4a5160; stroke-width: 3; } #clawd .hammer .hs { fill: #b9c1cc; }
 .s1 { fill: #c1272d; } .s2 { fill: #fff; } .s3 { fill: #234aa8; } .sstar { fill: #fff; }
 
@@ -531,7 +520,7 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 @keyframes capeFlutter { from { transform: skewX(-6deg) scaleY(1); } to { transform: skewX(8deg) scaleY(1.08); } }
 
 /* batman: bat-signal + grapple, cape billows */
-.st-batman .cone { fill: rgba(255,248,200,.14); animation: signal 3s ease-in-out infinite; }
+.st-batman .cone { fill: url(#coneGrad); animation: signal 3s ease-in-out infinite; }
 @keyframes signal { 50% { fill: rgba(255,248,200,.26); } }
 .st-batman .moon circle { fill: #fff6c8; filter: drop-shadow(0 0 10px #fff6c8); } .st-batman .batsil { fill: #111; }
 .st-batman .grapple { fill: none; stroke: #bfc5cf; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 8 5; opacity: 0; animation: grapple 3.2s infinite; }
@@ -604,12 +593,10 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 @keyframes ironHandR { 0%, 8% { translate: 90px -30px; opacity: 0; } 18%, 90% { translate: 0 0; opacity: 1; } 96%, 100% { translate: 90px -30px; opacity: 0; } }
 #clawd[data-act=hero][data-costume=iron] #handL { animation: ironHandL 9s ease-in-out infinite; }
 @keyframes ironHandL { 0%, 8% { translate: -90px -30px; opacity: 0; } 18%, 90% { translate: 0 0; opacity: 1; } 96%, 100% { translate: -90px -30px; opacity: 0; } }
-.c-iron .plate { animation: ironPlate 9s cubic-bezier(.3,1.3,.5,1) infinite; } .c-iron .slit { animation: ironSlit 9s ease-in-out infinite; }
 @keyframes ironPlate { 0%, 18% { translate: 0 -90px; opacity: 0; } 25%, 90% { translate: 0 0; opacity: 1; } 96%, 100% { translate: 0 -90px; opacity: 0; } }
 @keyframes ironSlit { 0%, 30% { opacity: 0; } 36%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
 .c-iron .arcg { animation: ironArc 9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes ironArc { 0%, 26% { opacity: 0; transform: scale(.2); } 32%, 90% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(.2); } }
-.c-iron .goldb { animation: ironBar 9s ease-in-out infinite; }
 @keyframes ironBar { 0%, 30% { opacity: 0; translate: 0 -20px; } 36%, 90% { opacity: 1; translate: 0 0; } 96%, 100% { opacity: 0; translate: 0 -20px; } }
 .st-iron .boots rect { fill: #e0b030; stroke: #8a6a10; stroke-width: 2; animation: ironBoots 9s cubic-bezier(.3,1.3,.5,1) infinite; }
 .st-iron .boots rect:nth-child(2n) { animation-delay: .15s; }
@@ -623,6 +610,8 @@ body[data-aura=glow] #stage, body[data-aura=max] #stage { padding-top: 64px; }
 /* room for the stunts: the buddy sits at the window's right edge, so give travelling heroes space */
 body[data-costume] #mascot { margin: 40px 56px 6px 8px; }
 body[data-costume] #stage { padding-top: 24px; }
+.c-iron .plate { animation: ironPlate 9s cubic-bezier(.3,1.3,.5,1) infinite; } .c-iron .slit { animation: ironSlit 9s ease-in-out infinite; }
+.c-iron .goldb { animation: ironBar 9s ease-in-out infinite; }
 
 /* ---------- emotes (🎭 tray): short meme gestures; the buddy gains a face, gloves and props while emoting ---------- */
 #emotes .emoteGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
