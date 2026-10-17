@@ -114,7 +114,7 @@ if (renderer) {
   let dirty = true, settle = 0;
   function frame() {
     const asleep = st.act === 'idle';
-    setTimeout(frame, asleep ? 250 : st.act === 'sit' ? 125 : 66); // 15 fps moving: smooth enough for chunky voxels, half the CPU of 30
+    setTimeout(frame, asleep ? 250 : st.act === 'sit' ? 125 : 67); // 15 fps moving: smooth enough for chunky voxels, half the CPU of 30
     if (document.hidden) return;
     if (asleep && !dirty && settle <= 0) return;
     if (asleep) settle--; else settle = 12; // let poses ease into the sleeping position before freezing
