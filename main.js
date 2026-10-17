@@ -23,8 +23,12 @@ const isMac = process.platform === 'darwin';
 // Wayland compositors ignore always-on-top for native windows, so run through XWayland on Linux.
 // The ozone backend is chosen before JS runs, so re-launch once with the flag.
 if (isLinux && process.env.XDG_SESSION_TYPE === 'wayland' && !process.argv.some((a) => a.startsWith('--ozone-platform'))) {
-  // inside an AppImage process.execPath is a temporary mount that disappears on exit, so relaunch the AppImage itself
-  app.relaunch({ args: [...process.argv.slice(1), '--ozone-platform=x11'], ...(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE } : {}) });
+  const args = [...process.argv.slice(1), '--ozone-platform=x11'];
+  if (process.env.APPIMAGE) {
+    // app.relaunch() cannot restart an AppImage: Chromium's relauncher runs with no_new_privs, so the setuid fusermount
+    // that mounts the image fails ("Operation not permitted") and nothing starts. Spawn it from this process instead.
+    try { require('child_process').spawn(process.env.APPIMAGE, args, { detached: true, stdio: 'ignore' }).unref(); } catch { app.relaunch({ args }); }
+  } else app.relaunch({ args });
   app.exit(0);
 }
 const gotLock = app.requestSingleInstanceLock();
