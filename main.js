@@ -994,21 +994,31 @@ function mayWander() {
   return ![...sessions.values()].some((s) => ['thinking', 'tool'].includes(s.status));
 }
 function homeX(b) { return settings.pos ? settings.pos.r - b.width : null; }
-setInterval(() => {
-  if (!win || win.isDestroyed() || !win.isVisible()) return;
+// Ticks at 30 Hz only while the window is actually moving; otherwise a few times a second is enough to pick
+// the next phase or notice Claude needs you (each tick costs a wakeup plus window-server calls).
+function petTick() {
+  let next = 250;
+  try { next = petStep(); } catch (e) { console.error('pet', e); }
+  setTimeout(petTick, next);
+}
+setTimeout(petTick, 250);
+function petStep() {
+  if (!win || win.isDestroyed() || !win.isVisible()) return 500;
+  if (!settings.walk || TEST) { if (pet.phase) setPhase(null); return 1000; }
   const b = win.getBounds();
   const wa = screen.getDisplayMatching(b).workArea;
   // Claude needs you: run back to where the user parked the buddy
-  if (settings.walk && needsYou() && !TEST) {
+  if (needsYou()) {
     const hx = homeX(b);
     if (hx !== null && Math.abs(hx - b.x) > 6) {
       const dir = hx > b.x ? 1 : -1;
       if (pet.phase !== 'run' || pet.dir !== dir) { pet.dir = dir; setPhase('run'); }
       win.setPosition(Math.round(b.x + dir * Math.min(10, Math.abs(hx - b.x))), b.y);
+      return 33;
     } else if (pet.phase) setPhase(null);
-    return;
+    return 250;
   }
-  if (!mayWander()) { if (pet.phase) setPhase(null); return; }
+  if (!mayWander()) { if (pet.phase) setPhase(null); return 250; }
   const now = Date.now();
   if (!pet.phase || pet.phase === 'run' || now > pet.until) {
     const idle = !sessions.size;
@@ -1023,8 +1033,10 @@ setInterval(() => {
     if (x < wa.x) { x = wa.x; pet.dir = 1; setPhase('walk', pet.until - now); }
     if (x + b.width > wa.x + wa.width) { x = wa.x + wa.width - b.width; pet.dir = -1; setPhase('walk', pet.until - now); }
     win.setPosition(Math.round(x), b.y);
+    return 33;
   }
-}, 33);
+  return 250;
+}
 
 let tray, refreshTray = () => {};
 function buildTray() {

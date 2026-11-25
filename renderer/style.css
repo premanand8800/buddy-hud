@@ -758,3 +758,18 @@ body[data-costume] #stage { padding-top: 24px; }
 #clawd[data-costume=batman] .shoe .su { fill: #3a4152; stroke: #0d0d0d; } #clawd[data-costume=batman] .shoe .ss { fill: #22262f; } #clawd[data-costume=batman] .shoe .sl { stroke: #f1c40f; } #clawd[data-costume=batman] .shoe .sk { stroke: #22262f; } #clawd[data-costume=batman] .shoe .so { fill: #15171c; }
 #clawd[data-costume=batman] .emo .pup { display: none; } #clawd[data-costume=batman] .emo .ew { fill: #ffffff; stroke: #0d0d0d; stroke-width: 4; }
 /* end emotes */
+
+/* power: resting (calm pose, nothing new for 20s; set in app.js). Hold the still pose that reduced-motion users
+   already get, so the transparent window stops repainting. No CSS animation at all here: even steps() animations
+   are serviced every frame (measured ~7% CPU). app.js flips data-tick on its 1.5s render instead, which gives a
+   slow wave while it waits for you and an occasional blink, at one style change per tick. */
+body.rest #clawd *, body.rest #aura, body.rest #aura *, body.rest #item3d { animation: none !important; }
+body.rest #clawd #handR, body.rest #clawd .blinker { transition: none; }
+body.rest[data-tick="1"] #clawd[data-act=wait] #handR { translate: 0 -12px; rotate: 16deg; }
+body.rest.blinking #clawd[data-eyes=open] .blinker, body.rest.blinking #clawd[data-eyes=wide] .blinker { transform: scaleY(.08); }
+
+/* power: the pet's calm poses change a few times per second instead of 60 (cheaper to paint, though Chromium still
+   services steps() animations every frame; rest mode above removes them entirely) */
+#clawd[data-act=look] .eyes { animation: dart 1.4s infinite alternate steps(4); }
+#clawd[data-act=sit] .body { animation: sitBob 3s steps(6) infinite; }
+#clawd[data-act=sit] #item, #clawd[data-act=look] #item { animation: floaty 2s steps(8) infinite; }

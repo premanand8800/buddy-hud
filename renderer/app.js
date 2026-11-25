@@ -227,6 +227,9 @@ function actFor(s, perms) {
 }
 
 // ---------- render ----------
+const CALM_ACTS = ['idle', 'sit', 'look', 'wait', 'hero', 'farm'];
+const REST_MS = 20000;
+let calmSince = Date.now(), lastAlertKey = '';
 function render() {
   const ss = state.sessions;
   ss.forEach((x) => { x.files = x.files || { read: [], edited: [] }; });
@@ -246,6 +249,19 @@ function render() {
   else if (farm) a = { act: 'farm', eyes: 'open', item: '🌊', item2: '', look: '' };
   if (emote && Date.now() < emoteUntil) a = { act: 'emote-' + emote.id, eyes: emote.eyes, item: emote.item, item2: '', look: '' };
   document.body.dataset.act = a.act;
+  // Power: after REST_MS in calm poses the buddy holds still (each animation frame repaints a transparent
+  // always-on-top window). Walking keeps the calm clock running but never rests, since the window is moving.
+  const calm = CALM_ACTS.includes(a.act);
+  // a new reason to want the user (another permission, a different session asking) restarts the clock
+  const alertKey = perms.length + '|' + (a.act === 'wait' ? a.item + (s ? s.id : '') : '');
+  if ((!calm && a.act !== 'walk') || alertKey !== lastAlertKey) calmSince = Date.now();
+  lastAlertKey = alertKey;
+  const rest = calm && Date.now() - calmSince > REST_MS;
+  document.body.classList.toggle('rest', rest);
+  if (rest) { // the resting buddy's only motion, on this 1.5s tick (see style.css)
+    document.body.dataset.tick = document.body.dataset.tick === '1' ? '0' : '1';
+    if (Math.random() < 0.3) { document.body.classList.add('blinking'); setTimeout(() => document.body.classList.remove('blinking'), 160); }
+  }
 
   // theme follows the model (picked model shows immediately, real model confirms later)
   const fam = (s && famOf(s.model)) || 'sonnet';
@@ -278,7 +294,7 @@ function render() {
   if (st0.costume && st0.costume !== 'none') document.body.dataset.costume = st0.costume; else document.body.removeAttribute('data-costume');
   svg.dataset.act = a.act; svg.dataset.eyes = a.eyes; svg.dataset.look = a.look;
   $('item').textContent = a.item; $('item2').textContent = a.item2;
-  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch', costume: st0.costume || 'none' });
+  if (window.__buddy3d && window.__buddy3d.ok && skin === '3d') window.__buddy3d.update({ act: a.act, eyes: a.eyes, item: a.item, dir: pet.dir, color: th.c, color2: th.c2, shades: farm ? 'sunglasses' : (st0.shades || 'none'), coffee: !!st0.coffee, think: st0.thinkPose || 'scratch', costume: st0.costume || 'none', rest });
 
   // context pill
   const pct = s && s.ctx.max ? Math.min(100, (s.ctx.used / s.ctx.max) * 100) : 0;
