@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.5
+
+- **Much lighter when idle.** The buddy used to keep redrawing its window forever, even with nothing happening. Now, after 20 seconds in a calm pose with nothing new, it holds still, with a slow wave while Claude waits for you and an occasional blink. Anything new (another permission, a different session asking) wakes it right away. Measured on macOS while Claude waits for input: flat looks 72.7% → 3.0% CPU, 3D 17.7% → 2.1%.
+- 3D: the 3D buddy now actually stops drawing when nothing changes, and no longer keeps drawing in the background after you switch to another look.
+- The wandering buddy checks its position a few times a second instead of 30, except while it is actually moving.
+
 ## 0.12.4
 
 - Fix: the Linux AppImage still did not start on Wayland in 0.12.3. Restarting itself in X11 mode fails inside an AppImage (Chromium's relauncher cannot mount the image), so it now starts the AppImage from the running app instead.
