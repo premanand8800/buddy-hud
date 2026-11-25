@@ -334,13 +334,18 @@ if (renderer) {
   let yaw = 0, last = 0, t0 = clock(), shownEmote = '';
 
   // A timer, not requestAnimationFrame: rAF keeps the compositor redrawing the transparent window at 60 Hz
-  // even on frames we skip. 8 fps when calm, 30 fps when moving.
+  // even on frames we skip. 8 fps when calm, 15 fps when moving.
   // Asleep: hold still and draw nothing until something changes (software WebGL is not free).
-  let dirty = true, settle = 0;
+  // Resting (the app says nothing has changed for a while): same as asleep, ease into the pose and stop drawing.
+  // Off (window hidden or another skin is showing): keep a slow heartbeat only, draw nothing.
+  let dirty = true, settle = 0, wasOff = false;
+  const CALM = ['sit', 'look', 'hero', 'farm'];
   function frame() {
-    const asleep = st.act === 'idle';
-    setTimeout(frame, asleep ? 250 : st.act === 'sit' ? 125 : 66); // 15 fps moving: smooth enough for chunky voxels, half the CPU of 30
-    if (document.hidden) return;
+    const off = document.hidden || !document.body.classList.contains('skin3d');
+    const asleep = st.act === 'idle' || st.rest;
+    setTimeout(frame, off ? 500 : asleep ? 250 : CALM.includes(st.act) ? 125 : 66); // 15 fps moving: smooth enough for chunky voxels, half the CPU of 30
+    if (off) { wasOff = true; return; }
+    if (wasOff) { wasOff = false; dirty = true; } // the canvas was hidden: draw it fresh once
     if (asleep && !dirty && settle <= 0) return;
     if (asleep) settle--; else settle = 12; // let poses ease into the sleeping position before freezing
     dirty = false;
@@ -555,14 +560,20 @@ if (renderer) {
   }
   frame();
 
+  let lastKey = '', lastO = {};
   window.__buddy3d = {
     ok: true,
     update(o) {
+      // the app calls this on every render (every 1.5s even when nothing happens): only a real change wakes the loop
+      const key = JSON.stringify(o);
+      if (key === lastKey) return;
+      const prev = lastO; lastKey = key; lastO = o;
       dirty = true; settle = 12;
       if (o.act) st.act = o.act;
+      st.rest = !!o.rest;
       if (o.eyes && eyes[o.eyes]) st.eyes = o.eyes;
       if (o.dir) st.dir = o.dir > 0 ? 1 : -1;
-      if (o.color || 'costume' in o) shownEmote = null; // repaint the emote decal's lids in the new body colour
+      if (o.color !== prev.color || o.costume !== prev.costume) shownEmote = null; // repaint the emote decal's lids in the new body colour
       if (o.color) { col.set(o.color); if (st.costume === 'none') { bodyMat.color.copy(col); bodyMat.emissive.copy(col); handMat.emissive.copy(col); legMat.color.copy(col); legMat.emissive.copy(col); } }
       if (o.color2) col2.set(o.color2);
       if ('costume' in o) {
